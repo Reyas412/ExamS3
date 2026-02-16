@@ -4,10 +4,12 @@ class DispatchController {
     public static function index() {
         $dispatches = DispatchModel::getAll();
         $donsRecap = DispatchModel::getDonsRecap();
+        $besoinsRecap = DispatchModel::getBesoinsRecap();
         $stats = DispatchModel::getGlobalStats();
         Flight::render('dispatch', [
             'dispatches' => $dispatches,
             'donsRecap' => $donsRecap,
+            'besoinsRecap' => $besoinsRecap,
             'stats' => $stats
         ], 'body_content');
         Flight::render('layout', [

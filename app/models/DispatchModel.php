@@ -185,6 +185,29 @@ class DispatchModel {
     }
     
     /**
+     * Récapitulatif global des besoins (combien satisfait vs total)
+     */
+    public static function getBesoinsRecap() {
+        $pdo = getDatabase();
+        $stmt = $pdo->query("
+            SELECT 
+                b.id,
+                b.type,
+                b.designation,
+                b.quantite AS besoin_quantite,
+                v.nom AS ville_nom,
+                COALESCE(SUM(di.quantite_attribuee), 0) AS quantite_recue,
+                (b.quantite - COALESCE(SUM(di.quantite_attribuee), 0)) AS quantite_restante
+            FROM besoins b
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            LEFT JOIN villes v ON b.ville_id = v.id
+            GROUP BY b.id, b.type, b.designation, b.quantite, v.nom
+            ORDER BY b.date_saisie ASC
+        ");
+        return $stmt->fetchAll();
+    }
+    
+    /**
      * Statistiques globales pour le dashboard
      */
     public static function getGlobalStats() {

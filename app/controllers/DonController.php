@@ -11,6 +11,20 @@ class DonController {
     }
 
     public static function create() {
+        // Si c'est une requete GET, afficher le formulaire
+        if (Flight::request()->method == 'GET') {
+            $dons = Don::getAll();
+            Flight::render('dons_create', [
+                'dons' => $dons
+            ], 'body_content');
+            Flight::render('layout', [
+                'title' => 'Ajouter un Don',
+                'active' => 'dons'
+            ]);
+            return;
+        }
+        
+        // POST - traiter les donnees
         $data = Flight::request()->data;
         
         $type = $data->type;

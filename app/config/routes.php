@@ -3,6 +3,11 @@
 // Routes principales
 Flight::route('GET /', 'DashboardController::index');
 
+// Routes récapitulatives du dashboard
+Flight::route('GET /dashboard/villes', 'DashboardController::villesRecap');
+Flight::route('GET /dashboard/besoins', 'DashboardController::besoinsRecap');
+Flight::route('GET /dashboard/dons', 'DashboardController::donsRecap');
+
 // Régions
 Flight::route('GET /regions', 'RegionController::index');
 Flight::route('GET /regions/@id', 'RegionController::view');
@@ -11,12 +16,16 @@ Flight::route('POST /regions/delete/@id', 'RegionController::delete');
 
 // Villes
 Flight::route('GET /villes', 'VilleController::index');
+Flight::route('GET /villes/create', 'VilleController::create');
 Flight::route('GET /villes/@id', 'VilleController::view');
+Flight::route('GET /villes/edit/@id', 'VilleController::edit');
 Flight::route('POST /villes/create', 'VilleController::create');
+Flight::route('POST /villes/update/@id', 'VilleController::update');
 Flight::route('POST /villes/delete/@id', 'VilleController::delete');
 
 // Besoins
 Flight::route('GET /besoins', 'BesoinController::index');
+Flight::route('GET /besoins/create', 'BesoinController::create');
 Flight::route('GET /besoins/edit/@id', 'BesoinController::edit');
 Flight::route('POST /besoins/update/@id', 'BesoinController::update');
 Flight::route('POST /besoins/create', 'BesoinController::create');
@@ -24,6 +33,7 @@ Flight::route('POST /besoins/delete/@id', 'BesoinController::delete');
 
 // Dons
 Flight::route('GET /dons', 'DonController::index');
+Flight::route('GET /dons/create', 'DonController::create');
 Flight::route('GET /dons/edit/@id', 'DonController::edit');
 Flight::route('POST /dons/update/@id', 'DonController::update');
 Flight::route('POST /dons/create', 'DonController::create');

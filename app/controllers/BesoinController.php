@@ -24,6 +24,22 @@ class BesoinController {
     }
 
     public static function create() {
+        // Si c'est une requete GET, afficher le formulaire
+        if (Flight::request()->method == 'GET') {
+            $villes = Ville::getAll();
+            $besoins = Besoin::getAll();
+            Flight::render('besoins_create', [
+                'villes' => $villes,
+                'besoins' => $besoins
+            ], 'body_content');
+            Flight::render('layout', [
+                'title' => 'Ajouter un Besoin',
+                'active' => 'besoins'
+            ]);
+            return;
+        }
+        
+        // POST - traiter les donnees
         $data = Flight::request()->data;
         
         $ville_id = $data->ville_id;

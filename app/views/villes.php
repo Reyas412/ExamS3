@@ -1,35 +1,12 @@
 <!-- Gestion des Villes -->
-<div class="card">
-    <div class="card-header">
-        <h3>Ajouter une ville</h3>
-    </div>
-    <div class="card-body">
-        <form action="/villes/create" method="POST" class="form-inline">
-            <div class="form-group">
-                <label for="region_id">Région</label>
-                <select id="region_id" name="region_id" required>
-                    <option value="">-- Sélectionner une région --</option>
-                    <?php foreach ($regions as $r): ?>
-                        <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="nom">Nom de la ville</label>
-                <input type="text" id="nom" name="nom" placeholder="Ex: Antananarivo" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Ajouter</button>
-        </form>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header">
-        <h3>Liste des Villes (<?= count($villes) ?>)</h3>
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Liste des villes (<?= count($villes) ?>)</h3>
+        <a href="/villes/create" class="btn btn-primary">Ajouter une ville</a>
     </div>
     <div class="card-body">
         <?php if (empty($villes)): ?>
-            <p class="text-muted">Aucune ville enregistrée.</p>
+            <p class="text-muted">Aucune ville enregistree.</p>
         <?php else: ?>
         <div class="table-responsive">
             <table>
@@ -37,7 +14,7 @@
                     <tr>
                         <th>#</th>
                         <th>Nom</th>
-                        <th>Région</th>
+                        <th>Region</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -48,7 +25,8 @@
                         <td><a href="/villes/<?= $ville['id'] ?>"><strong><?= htmlspecialchars($ville['nom']) ?></strong></a></td>
                         <td><?= htmlspecialchars($ville['region_nom']) ?></td>
                         <td>
-                            <a href="/villes/<?= $ville['id'] ?>" class="btn btn-warning btn-sm">Voir</a>
+                            <a href="/villes/<?= $ville['id'] ?>" class="btn btn-info btn-sm">Voir</a>
+                            <a href="/villes/edit/<?= $ville['id'] ?>" class="btn btn-warning btn-sm">Modifier</a>
                             <form action="/villes/delete/<?= $ville['id'] ?>" method="POST" class="inline-form" onsubmit="return confirm('Supprimer cette ville et tous ses besoins ?')">
                                 <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                             </form>
