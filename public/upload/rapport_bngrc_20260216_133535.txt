@@ -1,0 +1,27 @@
+============================================
+       RAPPORT FINAL - BNGRC
+============================================
+
+--- STATISTIQUES GLOBALES ---
+Total besoins: 12 000,00
+Total dons reçus: 11 351,00
+Total dispatché: 11 200,00
+Taux de couverture global: 93.33%
+
+--- PAR VILLE ---
+Antananarivo         | Besoins:   1 000,00 | Couvert:     400,00 | Taux:     40%
+Antsirabe            | Besoins:   1 000,00 | Couvert:     800,00 | Taux:     80%
+Mahajanga            | Besoins:  10 000,00 | Couvert:  10 000,00 | Taux:    100%
+Toamasina            | Besoins:       0,00 | Couvert:       0,00 | Taux:      0%
+
+--- PAR TYPE ---
+nature          | Besoins:   2 000,00 | Couvert:   1 200,00 | Taux:     60%
+argent          | Besoins:  10 000,00 | Couvert:  10 000,00 | Taux:    100%
+
+--- RÉSUMÉ ---
+Ville la plus impactée: Mahajanga (10 000,00)
+Ville la mieux couverte: Mahajanga (100%)
+
+============================================
+Rapport généré le: 16/02/2026 13:35:35
+============================================

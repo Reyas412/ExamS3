@@ -1,4 +1,24 @@
 <!-- Simulation du Dispatch -->
+<!-- KPIs Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value"><?= number_format($stats['total_besoins'], 0, ',', ' ') ?></div>
+        <div class="stat-label">Total Besoins</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value"><?= number_format($stats['total_dons'], 0, ',', ' ') ?></div>
+        <div class="stat-label">Dons Reçus</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value"><?= number_format($stats['total_dispatche'], 0, ',', ' ') ?></div>
+        <div class="stat-label">Total Dispatché</div>
+    </div>
+    <div class="stat-card accent">
+        <div class="stat-value"><?= $stats['taux_couverture'] ?>%</div>
+        <div class="stat-label">Taux de Couverture</div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h3>Actions</h3>
@@ -19,6 +39,9 @@
                     &#10006; Réinitialiser
                 </button>
             </form>
+            <a href="/dispatch/report" class="btn btn-secondary">
+                &#128196; Télécharger Rapport
+            </a>
         </div>
     </div>
 </div>

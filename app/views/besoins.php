@@ -1,4 +1,35 @@
 <!-- Gestion des Besoins -->
+<!-- Filtres -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+        <h3>Filtres</h3>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="form-inline">
+            <div class="form-group">
+                <label for="filter_ville">Ville</label>
+                <select id="filter_ville" name="ville_id">
+                    <option value="">Toutes les villes</option>
+                    <?php foreach ($villes as $v): ?>
+                        <option value="<?= $v['id'] ?>" <?= (isset($_GET['ville_id']) && $_GET['ville_id'] == $v['id']) ? 'selected' : '' ?>><?= htmlspecialchars($v['nom']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filter_type">Type</label>
+                <select id="filter_type" name="type">
+                    <option value="">Tous les types</option>
+                    <option value="nature" <?= (isset($_GET['type']) && $_GET['type'] == 'nature') ? 'selected' : '' ?>>En nature</option>
+                    <option value="matériaux" <?= (isset($_GET['type']) && $_GET['type'] == 'matériaux') ? 'selected' : '' ?>>En matériaux</option>
+                    <option value="argent" <?= (isset($_GET['type']) && $_GET['type'] == 'argent') ? 'selected' : '' ?>>En argent</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <a href="/besoins" class="btn btn-secondary">Réinitialiser</a>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <h3>Ajouter un besoin</h3>

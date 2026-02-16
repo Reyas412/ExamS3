@@ -11,6 +11,27 @@ class VilleController {
         ]);
     }
 
+    public static function view($id) {
+        $ville = Ville::getById($id);
+        if (!$ville) {
+            Flight::redirect('/villes?error=' . urlencode('Ville non trouvée'));
+            return;
+        }
+        
+        $besoins = Besoin::getByVilleId($id);
+        $stats = DispatchModel::getStatsByVilleId($id);
+        
+        Flight::render('ville_detail', [
+            'ville' => $ville,
+            'besoins' => $besoins,
+            'stats' => $stats
+        ], 'body_content');
+        Flight::render('layout', [
+            'title' => 'Détails: ' . htmlspecialchars($ville['nom']),
+            'active' => 'villes'
+        ]);
+    }
+
     public static function create() {
         $nom = Flight::request()->data->nom;
         $region_id = Flight::request()->data->region_id;

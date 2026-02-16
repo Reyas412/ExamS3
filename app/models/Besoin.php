@@ -24,6 +24,50 @@ class Besoin {
         return $stmt->fetch();
     }
 
+    public static function getFiltered($ville_id = null, $type = null) {
+        $pdo = getDatabase();
+        
+        $sql = "
+            SELECT b.*, v.nom AS ville_nom 
+            FROM besoins b 
+            JOIN villes v ON b.ville_id = v.id 
+            WHERE 1=1
+        ";
+        $params = [];
+        
+        if ($ville_id) {
+            $sql .= " AND b.ville_id = ?";
+            $params[] = $ville_id;
+        }
+        
+        if ($type) {
+            $sql .= " AND b.type = ?";
+            $params[] = $type;
+        }
+        
+        $sql .= " ORDER BY b.date_saisie ASC";
+        
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+    
+    public static function getByVilleId($ville_id) {
+        $pdo = getDatabase();
+        $stmt = $pdo->prepare("
+            SELECT b.*, v.nom AS ville_nom, 
+                   COALESCE(SUM(di.quantite_attribuee), 0) AS quantite_attribuee
+            FROM besoins b
+            JOIN villes v ON b.ville_id = v.id
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            WHERE b.ville_id = ?
+            GROUP BY b.id
+            ORDER BY b.date_saisie ASC
+        ");
+        $stmt->execute([$ville_id]);
+        return $stmt->fetchAll();
+    }
+
     public static function create($ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie = null) {
         $pdo = getDatabase();
         if ($date_saisie) {

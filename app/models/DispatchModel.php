@@ -2,6 +2,25 @@
 class DispatchModel {
 
     /**
+     * Vérifie si un dispatch existe déjà pour un don et un besoin
+     */
+    public static function exists($don_id, $besoin_id) {
+        $pdo = getDatabase();
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM dispatch WHERE don_id = ? AND besoin_id = ?");
+        $stmt->execute([$don_id, $besoin_id]);
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Vérifie si un dispatch a déjà été effectué
+     */
+    public static function hasDispatched() {
+        $pdo = getDatabase();
+        $stmt = $pdo->query("SELECT COUNT(*) FROM dispatch");
+        return $stmt->fetchColumn() > 0;
+    }
+
+    /**
      * Récupère tous les dispatches avec les infos jointes
      */
     public static function getAll() {
@@ -29,9 +48,14 @@ class DispatchModel {
     }
 
     /**
-     * Crée un enregistrement de dispatch
+     * Crée un enregistrement de dispatch (avec vérification anti-double)
      */
     public static function create($don_id, $besoin_id, $quantite_attribuee) {
+        // Vérification anti double-dispatch
+        if (self::exists($don_id, $besoin_id)) {
+            throw new Exception("Dispatch déjà existant pour ce don et besoin");
+        }
+        
         $pdo = getDatabase();
         $stmt = $pdo->prepare("INSERT INTO dispatch (don_id, besoin_id, quantite_attribuee) VALUES (?, ?, ?)");
         $stmt->execute([$don_id, $besoin_id, $quantite_attribuee]);
@@ -39,16 +63,19 @@ class DispatchModel {
     }
 
     /**
-     * Algorithme de dispatch FIFO
-     * 1. Prend les dons par ordre chronologique (date_saisie ASC)
-     * 2. Pour chaque don, distribue aux besoins correspondants (même type + désignation)
+     * Algorithme de dispatch FIFO avec contrôle anti double-dispatch
+     * 1. Vérifie si un dispatch a déjà été effectué
+     * 2. Prend les dons par ordre chronologique (date_saisie ASC)
+     * 3. Pour chaque don, distribue aux besoins correspondants (même type + désignation)
      *    par ordre chronologique (date_saisie ASC)
      */
     public static function runDispatch() {
+        // Vérification: si déjà dispatché, demander un reset
+        if (self::hasDispatched()) {
+            throw new Exception("Un dispatch a déjà été effectué. Veuillez réinitialiser avant de relancer.");
+        }
+        
         $pdo = getDatabase();
-
-        // Reset les dispatches existants
-        self::resetAll();
 
         // Récupérer tous les dons par ordre chronologique
         $dons = $pdo->query("SELECT * FROM dons ORDER BY date_saisie ASC")->fetchAll();
@@ -92,7 +119,7 @@ class DispatchModel {
                 // Quantité à attribuer = min(reste du don, reste du besoin)
                 $qte = min($donReste, $besoinReste);
 
-                // Créer le dispatch
+                // Créer le dispatch (avec vérification anti-double)
                 self::create($don['id'], $besoin['id'], $qte);
 
                 $besoinCouvert[$besoin['id']] += $qte;
@@ -155,5 +182,206 @@ class DispatchModel {
             ORDER BY d.date_saisie ASC
         ");
         return $stmt->fetchAll();
+    }
+    
+    /**
+     * Statistiques globales pour le dashboard
+     */
+    public static function getGlobalStats() {
+        $pdo = getDatabase();
+        
+        // Total besoins
+        $totalBesoins = $pdo->query("SELECT COALESCE(SUM(quantite), 0) FROM besoins")->fetchColumn();
+        
+        // Total dons reçus
+        $totalDons = $pdo->query("SELECT COALESCE(SUM(quantite), 0) FROM dons")->fetchColumn();
+        
+        // Total dispatché
+        $totalDispatche = $pdo->query("SELECT COALESCE(SUM(quantite_attribuee), 0) FROM dispatch")->fetchColumn();
+        
+        // Taux de couverture global
+        $tauxCouverture = $totalBesoins > 0 ? round(($totalDispatche / $totalBesoins) * 100, 2) : 0;
+        
+        return [
+            'total_besoins' => floatval($totalBesoins),
+            'total_dons' => floatval($totalDons),
+            'total_dispatche' => floatval($totalDispatche),
+            'taux_couverture' => $tauxCouverture
+        ];
+    }
+    
+    /**
+     * Statistiques par ville
+     */
+    public static function getStatsByVille() {
+        $pdo = getDatabase();
+        $stmt = $pdo->query("
+            SELECT 
+                v.id,
+                v.nom AS ville_nom,
+                COALESCE(SUM(b.quantite), 0) AS total_besoins,
+                COALESCE(SUM(di.quantite_attribuee), 0) AS total_couvert
+            FROM villes v
+            LEFT JOIN besoins b ON b.ville_id = v.id
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            GROUP BY v.id, v.nom
+            ORDER BY v.nom
+        ");
+        $results = $stmt->fetchAll();
+        
+        foreach ($results as &$row) {
+            $row['taux_couverture'] = $row['total_besoins'] > 0 
+                ? round(($row['total_couvert'] / $row['total_besoins']) * 100, 2) 
+                : 0;
+        }
+        
+        return $results;
+    }
+    
+    /**
+     * Statistiques par type
+     */
+    public static function getStatsByType() {
+        $pdo = getDatabase();
+        $stmt = $pdo->query("
+            SELECT 
+                b.type,
+                COALESCE(SUM(b.quantite), 0) AS total_besoins,
+                COALESCE(SUM(di.quantite_attribuee), 0) AS total_couvert
+            FROM besoins b
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            GROUP BY b.type
+        ");
+        $results = $stmt->fetchAll();
+        
+        foreach ($results as &$row) {
+            $row['taux_couverture'] = $row['total_besoins'] > 0 
+                ? round(($row['total_couvert'] / $row['total_besoins']) * 100, 2) 
+                : 0;
+        }
+        
+        return $results;
+    }
+    
+    public static function getStatsByVilleId($ville_id) {
+        $pdo = getDatabase();
+        $stmt = $pdo->prepare("
+            SELECT 
+                COALESCE(SUM(b.quantite), 0) AS total_besoins,
+                COALESCE(SUM(di.quantite_attribuee), 0) AS total_couvert
+            FROM besoins b
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            WHERE b.ville_id = ?
+            GROUP BY b.ville_id
+        ");
+        $stmt->execute([$ville_id]);
+        $result = $stmt->fetch();
+        
+        $taux = $result && $result['total_besoins'] > 0 
+            ? round(($result['total_couvert'] / $result['total_besoins']) * 100, 2) 
+            : 0;
+        
+        return [
+            'total_besoins' => floatval($result['total_besoins'] ?? 0),
+            'total_couvert' => floatval($result['total_couvert'] ?? 0),
+            'taux_couverture' => $taux
+        ];
+    }
+    
+    public static function getStatsByRegionId($region_id) {
+        $pdo = getDatabase();
+        $stmt = $pdo->prepare("
+            SELECT 
+                COALESCE(SUM(b.quantite), 0) AS total_besoins,
+                COALESCE(SUM(di.quantite_attribuee), 0) AS total_couvert
+            FROM besoins b
+            JOIN villes v ON b.ville_id = v.id
+            LEFT JOIN dispatch di ON di.besoin_id = b.id
+            WHERE v.region_id = ?
+            GROUP BY v.region_id
+        ");
+        $stmt->execute([$region_id]);
+        $result = $stmt->fetch();
+        
+        $taux = $result && $result['total_besoins'] > 0 
+            ? round(($result['total_couvert'] / $result['total_besoins']) * 100, 2) 
+            : 0;
+        
+        return [
+            'total_besoins' => floatval($result['total_besoins'] ?? 0),
+            'total_couvert' => floatval($result['total_couvert'] ?? 0),
+            'taux_couverture' => $taux
+        ];
+    }
+    
+    /**
+     * Génère le rapport final
+     */
+    public static function generateReport() {
+        $stats = self::getGlobalStats();
+        $statsByVille = self::getStatsByVille();
+        $statsByType = self::getStatsByType();
+        
+        // Trouver la ville la plus impactée (plus de besoins)
+        $villePlusImpactee = null;
+        $maxBesoins = 0;
+        foreach ($statsByVille as $v) {
+            if ($v['total_besoins'] > $maxBesoins) {
+                $maxBesoins = $v['total_besoins'];
+                $villePlusImpactee = $v;
+            }
+        }
+        
+        // Trouver la ville la mieux couverte
+        $villeMieuxCouverte = null;
+        $maxTaux = -1;
+        foreach ($statsByVille as $v) {
+            if ($v['total_besoins'] > 0 && $v['taux_couverture'] > $maxTaux) {
+                $maxTaux = $v['taux_couverture'];
+                $villeMieuxCouverte = $v;
+            }
+        }
+        
+        $report = "============================================\n";
+        $report .= "       RAPPORT FINAL - BNGRC\n";
+        $report .= "============================================\n\n";
+        
+        $report .= "--- STATISTIQUES GLOBALES ---\n";
+        $report .= "Total besoins: " . number_format($stats['total_besoins'], 2, ',', ' ') . "\n";
+        $report .= "Total dons reçus: " . number_format($stats['total_dons'], 2, ',', ' ') . "\n";
+        $report .= "Total dispatché: " . number_format($stats['total_dispatche'], 2, ',', ' ') . "\n";
+        $report .= "Taux de couverture global: " . $stats['taux_couverture'] . "%\n\n";
+        
+        $report .= "--- PAR VILLE ---\n";
+        foreach ($statsByVille as $v) {
+            $report .= sprintf("%-20s | Besoins: %10s | Couvert: %10s | Taux: %6s%%\n",
+                $v['ville_nom'],
+                number_format($v['total_besoins'], 2, ',', ' '),
+                number_format($v['total_couvert'], 2, ',', ' '),
+                $v['taux_couverture']
+            );
+        }
+        $report .= "\n";
+        
+        $report .= "--- PAR TYPE ---\n";
+        foreach ($statsByType as $t) {
+            $report .= sprintf("%-15s | Besoins: %10s | Couvert: %10s | Taux: %6s%%\n",
+                $t['type'],
+                number_format($t['total_besoins'], 2, ',', ' '),
+                number_format($t['total_couvert'], 2, ',', ' '),
+                $t['taux_couverture']
+            );
+        }
+        $report .= "\n";
+        
+        $report .= "--- RÉSUMÉ ---\n";
+        $report .= "Ville la plus impactée: " . ($villePlusImpactee ? $villePlusImpactee['ville_nom'] . " (" . number_format($villePlusImpactee['total_besoins'], 2, ',', ' ') . ")" : "N/A") . "\n";
+        $report .= "Ville la mieux couverte: " . ($villeMieuxCouverte ? $villeMieuxCouverte['ville_nom'] . " (" . $villeMieuxCouverte['taux_couverture'] . "%)" : "N/A") . "\n\n";
+        
+        $report .= "============================================\n";
+        $report .= "Rapport généré le: " . date('d/m/Y H:i:s') . "\n";
+        $report .= "============================================\n";
+        
+        return $report;
     }
 }

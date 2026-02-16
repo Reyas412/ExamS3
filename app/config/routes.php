@@ -5,11 +5,13 @@ Flight::route('GET /', 'DashboardController::index');
 
 // Régions
 Flight::route('GET /regions', 'RegionController::index');
+Flight::route('GET /regions/@id', 'RegionController::view');
 Flight::route('POST /regions/create', 'RegionController::create');
 Flight::route('POST /regions/delete/@id', 'RegionController::delete');
 
 // Villes
 Flight::route('GET /villes', 'VilleController::index');
+Flight::route('GET /villes/@id', 'VilleController::view');
 Flight::route('POST /villes/create', 'VilleController::create');
 Flight::route('POST /villes/delete/@id', 'VilleController::delete');
 
@@ -31,6 +33,7 @@ Flight::route('POST /dons/delete/@id', 'DonController::delete');
 Flight::route('GET /dispatch', 'DispatchController::index');
 Flight::route('POST /dispatch/run', 'DispatchController::run');
 Flight::route('POST /dispatch/reset', 'DispatchController::reset');
+Flight::route('GET /dispatch/report', 'DispatchController::generateReport');
 
 // Route 404
 Flight::map('notFound', function() {

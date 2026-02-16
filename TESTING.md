@@ -278,3 +278,106 @@ mysql -u root gnbrc < data.sql
 - Les quantités peuvent être partielles
 - Le dashboard se met à jour automatiquement après chaque action
 - Toutes les suppressions sont confirmées par l'utilisateur
+
+---
+
+## Scénario 10 : Achat avec dons argent (V2)
+
+### 10.1 Configuration des frais d'achat
+1. Aller sur `/config`
+2. Vérifier que le champ "Frais d'achat" est visible (défaut: 10%)
+3. Modifier la valeur (ex: 15%)
+4. Cliquer "Enregistrer"
+5. Vérifier le message de succès
+
+### 10.2 Page de simulation d'achat
+1. Aller sur `/simulation`
+2. Vérifier la liste des besoins restants (nature et matériaux uniquement)
+3. Vérifier l'argent disponible (dons en argent non utilisés)
+4. Vérifier le pourcentage de frais affiché
+
+### 10.3 Calcul des frais
+1. Sur la page simulation, noter un besoin:
+   - Quantité restante : 100
+   - Prix unitaire : 1 000 Ar
+   - Montant de base : 100 000 Ar
+2. Avec 10% de frais:
+   - Montant final attendu : 110 000 Ar
+3. Vérifier que le calcul est correct
+
+### 10.4 Validation d'un achat (sufficient funds)
+1. S'assurer d'avoir assez d'argent disponible
+2. Cliquer "Valider l'achat" sur un besoin
+3. Vérifier le message de succès
+4. Vérifier que:
+   - Un enregistrement est créé dans la table `achats`
+   - Un enregistrement est créé dans `dispatch` (type: achat)
+   - L'argent est déduit du disponible
+
+### 10.5 Validation d'un achat (insufficient funds)
+1. Calculer le montant nécessaire pour un besoin
+2. S'assurer que l'argent disponible est inférieur
+3. Tenter de valider l'achat
+4. Vérifier le message d'erreur avec le montant nécessaire
+
+### 10.6 Achat sur besoin déjà couvert
+1. сделать d'abord un dispatch normal qui couvre un besoin
+2. Tenter d'acheter ce besoin via simulation
+3. Vérifier le message d'erreur
+
+### 10.7 Récapitulatif financier (Ajax)
+1. Sur la page simulation, vérifier le bloc récapitulatif
+2. Vérifier les valeurs:
+   - Total besoins en montant
+   - Besoins satisfaits
+   - Besoins restants
+   - Taux de couverture
+3. Cliquer sur le bouton de rafraîchissement
+4. Vérifier que les données se mettent à jour
+
+### 10.8 Type de dispatch
+1. Après un achat, aller sur `/dispatch`
+2. Vérifier que la colonne "Type" affiche:
+   - "Don" pour les attributions classiques
+   - "Achat" pour les achats via simulation
+
+---
+
+## Scénario 11 : Navigation V2
+
+### 11.1 Accès au menu Simulation
+1. Dans le sidebar, cliquer sur "Simulation Achat"
+2. Vérifier que la page se charge correctement
+3. Vérifier que le menu esthighlighté
+
+### 11.2 Accès au menu Configuration
+1. Dans le sidebar, cliquer sur "Configuration"
+2. Vérifier que la page se charge correctement
+3. Vérifier que le menu esthighlighté
+
+---
+
+## Points de vérification V2
+
+- [ ] Page /config accessible et fonctionnelle
+- [ ] Modification des frais d'achat persistée
+- [ ] Page /simulation affiche les besoins restants
+- [ ] Calcul des frais correct (Montant + X%)
+- [ ] Achat validé avec fonds suffisants
+- [ ] Erreur affichée avec fonds insuffisants
+- [ ] Achat impossible sur besoin déjà couvert
+- [ ] Ajax récapitulatif fonctionne
+- [ ] Type "Achat" visible dans dispatch
+- [ ] Menu V2 accessible depuis sidebar
+
+---
+
+## Commandes supplémentaires V2
+
+```bash
+# Mettre à jour la base de données V2
+php update_v2.php
+
+# Tester l'API recap
+curl http://localhost:8000/simulation/recap
+```

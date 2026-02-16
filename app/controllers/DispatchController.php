@@ -4,9 +4,11 @@ class DispatchController {
     public static function index() {
         $dispatches = DispatchModel::getAll();
         $donsRecap = DispatchModel::getDonsRecap();
+        $stats = DispatchModel::getGlobalStats();
         Flight::render('dispatch', [
             'dispatches' => $dispatches,
-            'donsRecap' => $donsRecap
+            'donsRecap' => $donsRecap,
+            'stats' => $stats
         ], 'body_content');
         Flight::render('layout', [
             'title' => 'Simulation du Dispatch',
@@ -29,7 +31,28 @@ class DispatchController {
             DispatchModel::resetAll();
             Flight::redirect('/dispatch?success=' . urlencode('Dispatch réinitialisé'));
         } catch (Exception $e) {
-            Flight::redirect('/dispatch?error=' . urlencode('Erreur: ' . $e->getMessage()));
+            Flight::redirect('/dispatch?error=' . urlencode('Erreur lors de la réinitialisation'));
         }
+    }
+    
+    public static function generateReport() {
+        $report = DispatchModel::generateReport();
+        
+        // Créer le fichier
+        $filename = 'rapport_bngrc_' . date('Ymd_His') . '.txt';
+        $filepath = APP_ROOT . '/public/upload/' . $filename;
+        
+        file_put_contents($filepath, $report);
+        
+        // Télécharger le fichier
+        header('Content-Description: File Transfer');
+        header('Content-Type: text/plain');
+        header('Content-Disposition: attachment; filename=' . basename($filepath));
+        header('Expires: 0');
+        header('Cache-Control: must-revalidate');
+        header('Pragma: public');
+        header('Content-Length: ' . filesize($filepath));
+        readfile($filepath);
+        exit;
     }
 }

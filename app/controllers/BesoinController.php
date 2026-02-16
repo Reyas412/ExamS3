@@ -4,6 +4,15 @@ class BesoinController {
     public static function index() {
         $besoins = Besoin::getAll();
         $villes = Ville::getAll();
+        
+        // Appliquer les filtres
+        $ville_id = isset($_GET['ville_id']) ? $_GET['ville_id'] : null;
+        $type = isset($_GET['type']) ? $_GET['type'] : null;
+        
+        if ($ville_id || $type) {
+            $besoins = Besoin::getFiltered($ville_id, $type);
+        }
+        
         Flight::render('besoins', [
             'besoins' => $besoins,
             'villes' => $villes

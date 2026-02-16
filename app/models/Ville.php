@@ -27,6 +27,19 @@ class Ville {
         return $stmt->execute([$nom, $region_id, $id]);
     }
 
+    public static function getByRegionId($region_id) {
+        $pdo = getDatabase();
+        $stmt = $pdo->prepare("
+            SELECT v.*, r.nom as region_nom
+            FROM villes v
+            JOIN regions r ON v.region_id = r.id
+            WHERE v.region_id = ?
+            ORDER BY v.nom ASC
+        ");
+        $stmt->execute([$region_id]);
+        return $stmt->fetchAll();
+    }
+
     public static function delete($id) {
         $pdo = getDatabase();
         $stmt = $pdo->prepare("DELETE FROM villes WHERE id = ?");

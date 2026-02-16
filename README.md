@@ -1,76 +1,135 @@
-# Flight Login MVC
+# BNGRC - Gestion des Catastrophes
 
-Application d'authentification avec architecture MVC utilisant Flight PHP.
+Application web pour la gestion de la distribution des dons aux sinistrés par ville selon le principe FIFO (First In First Out).
+
+## Fonctionnalités
+
+### Version de base
+- Gestion des villes
+- Saisie des besoins (nature, matériaux, argent)
+- Saisie des dons
+- Distribution automatique (dispatch) avec algorithme FIFO
+- Tableau de bord avec indicateurs KPI
+- Système de régions
+
+### Version 2.0 (V2)
+- Achat de besoins avec dons en argent
+- Configuration des frais d'achat
+- Simulation d'achat avant validation
+- Récapitulatif financier en temps réel (Ajax)
+- Type de dispatch: Don vs Achat
+
+## Installation
+
+### Prérequis
+- PHP 8.2+
+- MySQL/MariaDB
+- XAMPP (recommandé)
+
+### Configuration
+
+1. **Base de données:**
+```bash
+# Créer la base de données
+mysql -u root -e "CREATE DATABASE gnbrc;"
+
+# Importer les données
+mysql -u root gnbrc < data.sql
+
+# Mettre à jour vers V2 (optionnel)
+php update_v2.php
+```
+
+2. **Lancer le serveur:**
+```bash
+php -S localhost:8000 -t public
+```
+
+3. **Accéder à l'application:**
+```
+http://localhost:8000
+```
 
 ## Structure du projet
 
 ```
-flight-login-mvc/
-├── app/                     # Application principale
-│   ├── config/             # Configuration (database, routes)
-│   ├── controllers/        # Contrôleurs MVC
-│   ├── models/            # Modèles de données
-│   └── views/             # Vues/Templates
-├── public/                # Dossier public (point d'entrée)
-│   ├── assets/           # Assets statiques
-│   │   ├── css/         # Feuilles de style
-│   │   └── js/          # JavaScript
-│   ├── images/          # Images
-│   ├── upload/          # Fichiers uploadés
-│   ├── index.php        # Point d'entrée
-│   └── .htaccess        # Réécriture URLs
-└── vendor/              # Dépendances (Flight)
+exam_S3_web-main/
+├── app/
+│   ├── config/
+│   │   ├── database.php      # Configuration base de données
+│   │   └── routes.php        # Définition des routes
+│   ├── controllers/
+│   │   ├── DashboardController.php
+│   │   ├── VilleController.php
+│   │   ├── BesoinController.php
+│   │   ├── DonController.php
+│   │   ├── DispatchController.php
+│   │   ├── RegionController.php
+│   │   ├── SimulationController.php  # V2
+│   │   └── ConfigController.php      # V2
+│   ├── models/
+│   │   ├── Ville.php
+│   │   ├── Besoin.php
+│   │   ├── Don.php
+│   │   ├── DispatchModel.php
+│   │   └── Region.php
+│   └── views/
+│       ├── dashboard.php
+│       ├── villes.php
+│       ├── besoins.php
+│       ├── dons.php
+│       ├── dispatch.php
+│       ├── regions.php
+│       ├── simulation.php     # V2
+│       └── config.php         # V2
+├── public/
+│   ├── index.php             # Point d'entrée
+│   └── assets/
+│       ├── css/style.css
+│       └── js/app.js
+├── data.sql                  # Données de base
+├── update_v2.php             # Script mise à jour V2
+├── README.md
+├── README_V2.md              # Documentation V2
+└── TESTING.md                # Scénarios de test
 ```
 
-## Installation
+## Routes
 
-1. **Configuration de la base de données :**
-```bash
-mysql -u root -p < ../flight-login/create_db.sql
-```
+| Route | Méthode | Description |
+|-------|---------|-------------|
+| `/` | GET | Tableau de bord |
+| `/villes` | GET | Gestion des villes |
+| `/villes/@id` | GET | Détail d'une ville |
+| `/besoins` | GET | Gestion des besoins |
+| `/dons` | GET | Gestion des dons |
+| `/dispatch` | GET | Page de distribution |
+| `/dispatch/run` | POST | Lancer le dispatch |
+| `/regions` | GET | Gestion des régions |
+| `/simulation` | GET | Simulation d'achat (V2) |
+| `/simulation/validate` | POST | Valider un achat (V2) |
+| `/config` | GET | Configuration (V2) |
 
-2. **Accès à l'application :**
-```
-http://localhost/19_janv_MDP/flight-login-mvc/public/
-```
+## Documentation
 
-## Architecture MVC
+- [README_V2.md](README_V2.md) - Documentation complète de la version 2.0
+- [TESTING.md](TESTING.md) - Scénarios de test
 
-### Modèles (`app/models/`)
-- `User.php` : Gestion des utilisateurs (CRUD, authentification)
+## Fonctionnalités détaillées
 
-### Contrôleurs (`app/controllers/`)
-- `HomeController.php` : Page d'accueil et ping
-- `AuthController.php` : Authentification (register, login)
+### Distribution FIFO
+L'algorithme de distribution respecte strictement l'ordre chronologique:
+- Les besoins les plus anciens sont servis en premier
+- Les dons les plus anciens sont utilisés en premier
+- Les correspondances se font sur type + désignation
 
-### Vues (`app/views/`)
-- `home.php` : Interface utilisateur principale
+### Indicateurs KPI
+- Nombre de villes
+- Total des besoins
+- Total des dons
+- Taux de couverture global
+- Couverture par ville
 
-### Configuration (`app/config/`)
-- `database.php` : Connexion PDO
-- `routes.php` : Définition des routes
-
-## API Endpoints
-
-- `GET /` - Interface web
-- `GET /ping` - Test de connexion
-- `POST /register` - Créer un compte
-- `POST /login` - Se connecter
-
-## Fonctionnalités
-
-- ✅ Architecture MVC complète
-- ✅ Séparation des responsabilités
-- ✅ Dossier public comme point d'entrée
-- ✅ Assets organisés (CSS, JS, images, uploads)
-- ✅ Authentification sécurisée avec password_hash()
-- ✅ API JSON REST
-- ✅ Interface web responsive
-- ✅ Validation côté client et serveur
-
-## Sécurité
-
-- Mots de passe hashés avec `password_hash()`
-- Validation des entrées
-- Échappement des sorties
-- Séparation du code et des assets publics# ExamS3
+### Type de dispatch (V2)
+- **Don**: Attribution classique via dispatch automatique
+- **Achat**: Achat direct de besoins via dons en argent

@@ -1,4 +1,4 @@
-<!-- Dashboard -->
+<!-- Dashboard - KPIs -->
 <div class="stats-grid">
     <div class="stat-card">
         <div class="stat-value"><?= $stats['nbVilles'] ?></div>
@@ -10,12 +10,17 @@
     </div>
     <div class="stat-card">
         <div class="stat-value"><?= number_format($stats['totalDons'], 0, ',', ' ') ?></div>
-        <div class="stat-label">Total Dons (qté)</div>
+        <div class="stat-label">Dons Reçus (qté)</div>
     </div>
     <div class="stat-card accent">
         <div class="stat-value"><?= $stats['tauxCouverture'] ?>%</div>
         <div class="stat-label">Taux de Couverture</div>
     </div>
+</div>
+
+<!-- Bouton Rapport -->
+<div style="text-align: right; margin-bottom: 20px;">
+    <a href="/dispatch/report" class="btn btn-primary">&#128196; Télécharger Rapport</a>
 </div>
 
 <!-- Tableau par ville -->
