@@ -4,7 +4,8 @@ class Besoin {
     public static function getAll() {
         $pdo = getDatabase();
         $stmt = $pdo->query("
-            SELECT b.*, v.nom AS ville_nom 
+            SELECT b.*, v.nom AS ville_nom, 
+                   COALESCE(b.quantite_satisfaite, 0) as quantite_satisfaite
             FROM besoins b 
             JOIN villes v ON b.ville_id = v.id 
             ORDER BY b.date_saisie ASC
@@ -24,11 +25,12 @@ class Besoin {
         return $stmt->fetch();
     }
 
-    public static function getFiltered($ville_id = null, $type = null) {
+    public static function getFiltered($ville_id = null, $type = null, $restants = null) {
         $pdo = getDatabase();
         
         $sql = "
-            SELECT b.*, v.nom AS ville_nom 
+            SELECT b.*, v.nom AS ville_nom, 
+                   COALESCE(b.quantite_satisfaite, 0) as quantite_satisfaite
             FROM besoins b 
             JOIN villes v ON b.ville_id = v.id 
             WHERE 1=1
@@ -43,6 +45,10 @@ class Besoin {
         if ($type) {
             $sql .= " AND b.type = ?";
             $params[] = $type;
+        }
+        
+        if ($restants) {
+            $sql .= " AND (b.quantite - COALESCE(b.quantite_satisfaite, 0)) > 0";
         }
         
         $sql .= " ORDER BY b.date_saisie ASC";

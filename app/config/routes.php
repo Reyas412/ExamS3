@@ -45,6 +45,19 @@ Flight::route('POST /dispatch/run', 'DispatchController::run');
 Flight::route('POST /dispatch/reset', 'DispatchController::reset');
 Flight::route('GET /dispatch/report', 'DispatchController::generateReport');
 
+// Achats
+Flight::route('GET /achats', 'AchatController::index');
+Flight::route('POST /achats/delete/@id', 'AchatController::delete');
+
+// API - Achats
+Flight::route('GET /api/besoins', 'AchatController::apiBesoins');
+Flight::route('POST /api/achats/simuler', 'AchatController::apiSimuler');
+Flight::route('POST /api/achats/valider', 'AchatController::apiValider');
+Flight::route('GET /api/achats', 'AchatController::apiIndex');
+Flight::route('GET /api/recap', 'AchatController::apiRecap');
+Flight::route('GET /api/config/frais', 'AchatController::apiGetFrais');
+Flight::route('POST /api/config/frais', 'AchatController::apiSetFrais');
+
 // Route 404
 Flight::map('notFound', function() {
     Flight::redirect('/');
