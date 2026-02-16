@@ -25,8 +25,6 @@
     </div>
     <div class="card-body">
         <p class="text-muted" style="margin-bottom: 16px;">
-            Le dispatch distribue les dons aux besoins par ordre chronologique (FIFO). 
-            Les dons sont attribués aux besoins qui correspondent au même type et à la même désignation.
         </p>
         <div class="btn-group">
             <form action="/dispatch/run" method="POST" class="inline-form">
@@ -123,6 +121,54 @@
                         <td><?= number_format($don['don_quantite'], 2, ',', ' ') ?></td>
                         <td><?= number_format($don['quantite_distribuee'], 2, ',', ' ') ?></td>
                         <td><?= number_format($don['quantite_restante'], 2, ',', ' ') ?></td>
+                        <td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- État des besoins après dispatch -->
+<div class="card">
+    <div class="card-header">
+        <h3>&#128230; État des Besoins après Dispatch</h3>
+    </div>
+    <div class="card-body">
+        <?php if (empty($besoinsRecap)): ?>
+            <p class="text-muted">Aucun besoin enregistré.</p>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Désignation</th>
+                        <th>Ville</th>
+                        <th>Qté Totale</th>
+                        <th>Reçu</th>
+                        <th>Restant</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($besoinsRecap as $besoin): ?>
+                    <?php 
+                        $pct = floatval($besoin['besoin_quantite']) > 0 
+                            ? round((floatval($besoin['quantite_recue']) / floatval($besoin['besoin_quantite'])) * 100, 1)
+                            : 0;
+                        $statusClass = $pct >= 100 ? 'badge-success' : ($pct > 0 ? 'badge-warning' : 'badge-danger');
+                        $statusText = $pct >= 100 ? 'Satisfait' : ($pct > 0 ? 'Partiellement satisfait' : 'Non satisfait');
+                    ?>
+                    <tr>
+                        <td><span class="badge badge-type"><?= htmlspecialchars($besoin['type']) ?></span></td>
+                        <td><?= htmlspecialchars($besoin['designation']) ?></td>
+                        <td><?= htmlspecialchars($besoin['ville_nom']) ?></td>
+                        <td><?= number_format($besoin['besoin_quantite'], 2, ',', ' ') ?></td>
+                        <td><?= number_format($besoin['quantite_recue'], 2, ',', ' ') ?></td>
+                        <td><?= number_format($besoin['quantite_restante'], 2, ',', ' ') ?></td>
                         <td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span></td>
                     </tr>
                     <?php endforeach; ?>

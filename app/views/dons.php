@@ -1,47 +1,12 @@
 <!-- Gestion des Dons -->
-<div class="card">
-    <div class="card-header">
-        <h3>Ajouter un don</h3>
-    </div>
-    <div class="card-body">
-        <form action="/dons/create" method="POST">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="type">Type</label>
-                    <select id="type" name="type" required>
-                        <option value="">-- Sélectionner --</option>
-                        <option value="nature">En nature</option>
-                        <option value="matériaux">En matériaux</option>
-                        <option value="argent">En argent</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="designation">Désignation</label>
-                    <input type="text" id="designation" name="designation" placeholder="Ex: Riz, Tôle, Argent" required>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="quantite">Quantité</label>
-                    <input type="number" id="quantite" name="quantite" step="0.01" min="0" placeholder="Ex: 500" required>
-                </div>
-                <div class="form-group">
-                    <label for="date_saisie">Date de saisie (optionnel)</label>
-                    <input type="datetime-local" id="date_saisie" name="date_saisie">
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Ajouter le don</button>
-        </form>
-    </div>
-</div>
-
-<div class="card">
-    <div class="card-header">
-        <h3>Liste des Dons (<?= count($dons) ?>)</h3>
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Liste des dons (<?= count($dons) ?>)</h3>
+        <a href="/dons/create" class="btn btn-primary">Ajouter un don</a>
     </div>
     <div class="card-body">
         <?php if (empty($dons)): ?>
-            <p class="text-muted">Aucun don enregistré.</p>
+            <p class="text-muted">Aucun don enregistre.</p>
         <?php else: ?>
         <div class="table-responsive">
             <table>
@@ -49,8 +14,8 @@
                     <tr>
                         <th>#</th>
                         <th>Type</th>
-                        <th>Désignation</th>
-                        <th>Quantité</th>
+                        <th>Designation</th>
+                        <th>Quantite</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
