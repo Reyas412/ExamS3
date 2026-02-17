@@ -20,6 +20,9 @@ require_once APP_ROOT . '/app/models/DispatchModel.php';
 require_once APP_ROOT . '/app/models/Region.php';
 require_once APP_ROOT . '/app/models/Achat.php';
 
+// Chargement des services
+require_once APP_ROOT . '/app/services/DispatchService.php';
+
 // Chargement des contrôleurs
 require_once APP_ROOT . '/app/controllers/DashboardController.php';
 require_once APP_ROOT . '/app/controllers/VilleController.php';

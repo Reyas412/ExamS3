@@ -74,14 +74,14 @@ class Besoin {
         return $stmt->fetchAll();
     }
 
-    public static function create($ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie = null) {
+    public static function create($ville_id, $type, $designation, $quantite, $prix_unitaire, $unite = null, $date_saisie = null) {
         $pdo = getDatabase();
         if ($date_saisie) {
-            $stmt = $pdo->prepare("INSERT INTO besoins (ville_id, type, designation, quantite, prix_unitaire, date_saisie) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie]);
+            $stmt = $pdo->prepare("INSERT INTO besoins (ville_id, type, designation, quantite, unite, prix_unitaire, date_saisie) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$ville_id, $type, $designation, $quantite, $unite, $prix_unitaire, $date_saisie]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO besoins (ville_id, type, designation, quantite, prix_unitaire) VALUES (?, ?, ?, ?, ?)");
-            $stmt->execute([$ville_id, $type, $designation, $quantite, $prix_unitaire]);
+            $stmt = $pdo->prepare("INSERT INTO besoins (ville_id, type, designation, quantite, unite, prix_unitaire) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$ville_id, $type, $designation, $quantite, $unite, $prix_unitaire]);
         }
         return $pdo->lastInsertId();
     }
@@ -92,14 +92,14 @@ class Besoin {
         return $stmt->execute([$id]);
     }
 
-    public static function update($id, $ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie = null) {
+    public static function update($id, $ville_id, $type, $designation, $quantite, $prix_unitaire, $unite = null, $date_saisie = null) {
         $pdo = getDatabase();
         if ($date_saisie) {
-            $stmt = $pdo->prepare("UPDATE besoins SET ville_id = ?, type = ?, designation = ?, quantite = ?, prix_unitaire = ?, date_saisie = ? WHERE id = ?");
-            $stmt->execute([$ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie, $id]);
+            $stmt = $pdo->prepare("UPDATE besoins SET ville_id = ?, type = ?, designation = ?, quantite = ?, unite = ?, prix_unitaire = ?, date_saisie = ? WHERE id = ?");
+            $stmt->execute([$ville_id, $type, $designation, $quantite, $unite, $prix_unitaire, $date_saisie, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE besoins SET ville_id = ?, type = ?, designation = ?, quantite = ?, prix_unitaire = ? WHERE id = ?");
-            $stmt->execute([$ville_id, $type, $designation, $quantite, $prix_unitaire, $id]);
+            $stmt = $pdo->prepare("UPDATE besoins SET ville_id = ?, type = ?, designation = ?, quantite = ?, unite = ?, prix_unitaire = ? WHERE id = ?");
+            $stmt->execute([$ville_id, $type, $designation, $quantite, $unite, $prix_unitaire, $id]);
         }
         return $stmt->rowCount();
     }

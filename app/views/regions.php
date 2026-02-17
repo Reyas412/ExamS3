@@ -37,7 +37,6 @@
                         <td><?= $i + 1 ?></td>
                         <td><a href="/regions/<?= $region['id'] ?>"><strong><?= htmlspecialchars($region['nom']) ?></strong></a></td>
                         <td>
-                            <a href="/regions/<?= $region['id'] ?>" class="btn btn-warning btn-sm">Voir</a>
                             <form action="/regions/delete/<?= $region['id'] ?>" method="POST" class="inline-form" onsubmit="return confirm('Supprimer cette région ?')">
                                 <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
                             </form>

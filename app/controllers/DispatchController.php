@@ -2,12 +2,16 @@
 class DispatchController {
     
     public static function index() {
-        $dispatches = DispatchModel::getAll();
+        $dispatchesData = DispatchModel::getAllWithAchats();
+        $dispatches = $dispatchesData['dispatches'];
+        $achats = $dispatchesData['achats'];
         $donsRecap = DispatchModel::getDonsRecap();
         $besoinsRecap = DispatchModel::getBesoinsRecap();
         $stats = DispatchModel::getGlobalStats();
+        
         Flight::render('dispatch', [
             'dispatches' => $dispatches,
+            'achats' => $achats,
             'donsRecap' => $donsRecap,
             'besoinsRecap' => $besoinsRecap,
             'stats' => $stats
@@ -20,9 +24,25 @@ class DispatchController {
 
     public static function run() {
         try {
-            $result = DispatchModel::runDispatch();
+            $dispatchType = $_POST['dispatch_type'] ?? 'fifo_dons';
+            
+            // Valider le type de dispatch
+            $allowedTypes = ['fifo_dons', 'proportionnel', 'fifo_besoins'];
+            if (!in_array($dispatchType, $allowedTypes)) {
+                $dispatchType = 'fifo_dons';
+            }
+            
+            // Utiliser le service de dispatch
+            $result = DispatchService::run($dispatchType);
             $count = count($result);
-            Flight::redirect('/dispatch?success=' . urlencode("Dispatch exécuté : $count attributions effectuées"));
+            
+            $typeNames = [
+                'fifo_dons' => 'FIFO dons',
+                'proportionnel' => 'Proportionnel',
+                'fifo_besoins' => 'FIFO besoins'
+            ];
+            
+            Flight::redirect('/dispatch?success=' . urlencode("Dispatch {$typeNames[$dispatchType]} exécuté : $count attributions effectuées"));
         } catch (Exception $e) {
             Flight::redirect('/dispatch?error=' . urlencode('Erreur: ' . $e->getMessage()));
         }
@@ -30,7 +50,8 @@ class DispatchController {
 
     public static function reset() {
         try {
-            DispatchModel::resetAll();
+            // Utiliser le service pour réinitialiser
+            DispatchService::resetAll();
             Flight::redirect('/dispatch?success=' . urlencode('Dispatch réinitialisé'));
         } catch (Exception $e) {
             Flight::redirect('/dispatch?error=' . urlencode('Erreur lors de la réinitialisation'));

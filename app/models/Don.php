@@ -14,14 +14,14 @@ class Don {
         return $stmt->fetch();
     }
 
-    public static function create($type, $designation, $quantite, $date_saisie = null) {
+    public static function create($type, $designation, $quantite, $unite = null, $date_saisie = null) {
         $pdo = getDatabase();
         if ($date_saisie) {
-            $stmt = $pdo->prepare("INSERT INTO dons (type, designation, quantite, date_saisie) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$type, $designation, $quantite, $date_saisie]);
+            $stmt = $pdo->prepare("INSERT INTO dons (type, designation, quantite, unite, date_saisie) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$type, $designation, $quantite, $unite, $date_saisie]);
         } else {
-            $stmt = $pdo->prepare("INSERT INTO dons (type, designation, quantite) VALUES (?, ?, ?)");
-            $stmt->execute([$type, $designation, $quantite]);
+            $stmt = $pdo->prepare("INSERT INTO dons (type, designation, quantite, unite) VALUES (?, ?, ?, ?)");
+            $stmt->execute([$type, $designation, $quantite, $unite]);
         }
         return $pdo->lastInsertId();
     }
@@ -32,14 +32,14 @@ class Don {
         return $stmt->execute([$id]);
     }
 
-    public static function update($id, $type, $designation, $quantite, $date_saisie = null) {
+    public static function update($id, $type, $designation, $quantite, $unite = null, $date_saisie = null) {
         $pdo = getDatabase();
         if ($date_saisie) {
-            $stmt = $pdo->prepare("UPDATE dons SET type = ?, designation = ?, quantite = ?, date_saisie = ? WHERE id = ?");
-            $stmt->execute([$type, $designation, $quantite, $date_saisie, $id]);
+            $stmt = $pdo->prepare("UPDATE dons SET type = ?, designation = ?, quantite = ?, unite = ?, date_saisie = ? WHERE id = ?");
+            $stmt->execute([$type, $designation, $quantite, $unite, $date_saisie, $id]);
         } else {
-            $stmt = $pdo->prepare("UPDATE dons SET type = ?, designation = ?, quantite = ? WHERE id = ?");
-            $stmt->execute([$type, $designation, $quantite, $id]);
+            $stmt = $pdo->prepare("UPDATE dons SET type = ?, designation = ?, quantite = ?, unite = ? WHERE id = ?");
+            $stmt->execute([$type, $designation, $quantite, $unite, $id]);
         }
         return $stmt->rowCount();
     }

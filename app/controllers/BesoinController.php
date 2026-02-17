@@ -48,16 +48,35 @@ class BesoinController {
         $type = $data->type;
         $designation = $data->designation;
         $quantite = $data->quantite;
+        $unite = $data->unite ?: null;
         $prix_unitaire = $data->prix_unitaire;
+        $montant = $data->montant;
         $date_saisie = $data->date_saisie ?: null;
 
-        if (empty($ville_id) || empty($type) || empty($designation) || empty($quantite) || empty($prix_unitaire)) {
+        if (empty($ville_id) || empty($type)) {
             Flight::redirect('/besoins?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
             return;
         }
 
+        // Pour type argent, on utilise montant au lieu de quantite/designation/prix_unitaire
+        if ($type === 'argent') {
+            if (empty($montant)) {
+                Flight::redirect('/besoins?error=' . urlencode('Le montant est obligatoire pour un besoin en argent'));
+                return;
+            }
+            $designation = 'Argent';
+            $quantite = $montant;
+            $prix_unitaire = 1; // Prix unitaire = 1 pour simplifier
+            $unite = 'Ar';
+        } else {
+            if (empty($designation) || empty($quantite) || empty($prix_unitaire)) {
+                Flight::redirect('/besoins?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+                return;
+            }
+        }
+
         try {
-            Besoin::create($ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie);
+            Besoin::create($ville_id, $type, $designation, $quantite, $prix_unitaire, $unite, $date_saisie);
             Flight::redirect('/besoins?success=' . urlencode('Besoin ajouté avec succès'));
         } catch (Exception $e) {
             Flight::redirect('/besoins?error=' . urlencode('Erreur: ' . $e->getMessage()));
@@ -90,16 +109,35 @@ class BesoinController {
         $type = $data->type;
         $designation = $data->designation;
         $quantite = $data->quantite;
+        $unite = $data->unite ?: null;
         $prix_unitaire = $data->prix_unitaire;
+        $montant = $data->montant;
         $date_saisie = $data->date_saisie ?: null;
 
-        if (empty($ville_id) || empty($type) || empty($designation) || empty($quantite) || empty($prix_unitaire)) {
+        if (empty($ville_id) || empty($type)) {
             Flight::redirect('/besoins/edit/' . $id . '?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
             return;
         }
 
+        // Pour type argent, on utilise montant au lieu de quantite/designation/prix_unitaire
+        if ($type === 'argent') {
+            if (empty($montant)) {
+                Flight::redirect('/besoins/edit/' . $id . '?error=' . urlencode('Le montant est obligatoire pour un besoin en argent'));
+                return;
+            }
+            $designation = 'Argent';
+            $quantite = $montant;
+            $prix_unitaire = 1;
+            $unite = 'Ar';
+        } else {
+            if (empty($designation) || empty($quantite) || empty($prix_unitaire)) {
+                Flight::redirect('/besoins/edit/' . $id . '?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+                return;
+            }
+        }
+
         try {
-            Besoin::update($id, $ville_id, $type, $designation, $quantite, $prix_unitaire, $date_saisie);
+            Besoin::update($id, $ville_id, $type, $designation, $quantite, $prix_unitaire, $unite, $date_saisie);
             Flight::redirect('/besoins?success=' . urlencode('Besoin modifié avec succès'));
         } catch (Exception $e) {
             Flight::redirect('/besoins/edit/' . $id . '?error=' . urlencode('Erreur: ' . $e->getMessage()));

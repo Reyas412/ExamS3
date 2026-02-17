@@ -81,7 +81,7 @@ class Achat {
         // Vérifier si un don en nature est disponible pour ce besoin
         $stmt = $pdo->prepare("
             SELECT d.* FROM dons d 
-            WHERE d.type = ? AND d.montant_restant > 0
+            WHERE d.type = ? AND d.quantite > 0
             AND d.designation = ?
             ORDER BY d.date_saisie ASC
             LIMIT 1
@@ -140,18 +140,27 @@ class Achat {
         }
         
         // Vérifier si un don en nature est disponible pour ce besoin
-        $stmt = $pdo->prepare("
-            SELECT d.* FROM dons d 
-            WHERE d.type = ? AND d.montant_restant > 0
-            AND d.designation = ?
-            ORDER BY d.date_saisie ASC
-            LIMIT 1
-        ");
-        $stmt->execute([$besoin['type'], $besoin['designation']]);
-        $don_nature = $stmt->fetch();
+        // Pour type argent on vérifie montant_restant, pour nature/materiaux on vérifie la quantité restante
+        if ($besoin['type'] === 'argent') {
+            // Pour les besoins en argent, on n'a pas besoin de vérifier les dons nature
+            $don_nature = null;
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT d.*, 
+                       d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0) as reste
+                FROM dons d 
+                WHERE d.type = ? 
+                AND d.designation = ?
+                AND (d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0)) > 0
+                ORDER BY d.date_saisie ASC
+                LIMIT 1
+            ");
+            $stmt->execute([$besoin['type'], $besoin['designation']]);
+            $don_nature = $stmt->fetch();
+        }
         
         if ($don_nature) {
-            throw new Exception("Un don en nature est disponible pour ce besoin: " . $don_nature['designation'] . " (" . $don_nature['montant_restant'] . " disponibles)");
+            throw new Exception("Un don en " . $besoin['type'] . " est disponible pour ce besoin: " . $don_nature['designation'] . " (" . number_format($don_nature['reste'], 0, ',', ' ') . " disponibles)");
         }
         
         // Calculer le montant
@@ -162,7 +171,7 @@ class Achat {
         // Obtenir les dons monétaires disponibles (FIFO)
         $stmt = $pdo->query("
             SELECT * FROM dons 
-            WHERE type = 'argent' AND montant_restant > 0
+            WHERE type = 'argent' AND quantite > 0
             ORDER BY date_saisie ASC
         ");
         $dons_argent = $stmt->fetchAll();
@@ -174,7 +183,7 @@ class Achat {
         foreach ($dons_argent as $don) {
             if ($montant_couvert >= $montant_total) break;
             
-            $montant_dispo = floatval($don['montant_restant']);
+            $montant_dispo = floatval($don['quantite']);
             $montant_necessaire = $montant_total - $montant_couvert;
             $montant_utilise = min($montant_dispo, $montant_necessaire);
             
@@ -223,31 +232,16 @@ class Achat {
                 throw new Exception("Besoin non trouvé");
             }
             
-            // Vérifier si un don en nature est disponible pour ce besoin
-            $stmt = $pdo->prepare("
-                SELECT d.* FROM dons d 
-                WHERE d.type = ? AND d.montant_restant > 0
-                AND d.designation = ?
-                ORDER BY d.date_saisie ASC
-                LIMIT 1
-                FOR UPDATE
-            ");
-            $stmt->execute([$besoin['type'], $besoin['designation']]);
-            $don_nature = $stmt->fetch();
-            
-            if ($don_nature) {
-                throw new Exception("Un don en nature est disponible pour ce besoin. Utilisez d'abord ce don.");
-            }
-            
             // Calculer le montant
             $frais_percent = $frais_percent ?? self::getFraisPercent();
             $montant_base = $quantite * floatval($besoin['prix_unitaire']);
             $montant_total = $montant_base * (1 + $frais_percent / 100);
             
             // Obtenir les dons monétaires disponibles (FIFO) avec lock
+            // Pour les besoins en argent, on utilise directement la quantite comme montant
             $stmt = $pdo->query("
                 SELECT * FROM dons 
-                WHERE type = 'argent' AND montant_restant > 0
+                WHERE type = 'argent' AND quantite > 0
                 ORDER BY date_saisie ASC
                 FOR UPDATE
             ");
@@ -260,13 +254,13 @@ class Achat {
             foreach ($dons_argent as $don) {
                 if ($montant_couvert >= $montant_total) break;
                 
-                $montant_dispo = floatval($don['montant_restant']);
+                $montant_dispo = floatval($don['quantite']);
                 $montant_necessaire = $montant_total - $montant_couvert;
                 $montant_utilise = min($montant_dispo, $montant_necessaire);
                 
                 // Mettre à jour le don
                 $nouveau_montant_restant = $montant_dispo - $montant_utilise;
-                $stmt = $pdo->prepare("UPDATE dons SET montant_restant = ? WHERE id = ?");
+                $stmt = $pdo->prepare("UPDATE dons SET quantite = ? WHERE id = ?");
                 $stmt->execute([round($nouveau_montant_restant, 2), $don['id']]);
                 
                 $allocation[] = [
@@ -309,16 +303,14 @@ class Achat {
             
             // Mettre à jour le besoin
             $nouvelle_quantite_satisfaite = floatval($besoin['quantite_satisfaite']) + $quantite;
-            $nouveau_montant_restant = floatval($besoin['montant_restant']) - $montant_couvert;
             
             $stmt = $pdo->prepare("
                 UPDATE besoins 
-                SET quantite_satisfaite = ?, montant_restant = ?
+                SET quantite_satisfaite = ?
                 WHERE id = ?
             ");
             $stmt->execute([
                 round($nouvelle_quantite_satisfaite, 2),
-                round(max(0, $nouveau_montant_restant), 2),
                 $besoin_id
             ]);
             
@@ -371,33 +363,161 @@ class Achat {
                 throw new Exception("Achat non trouvé");
             }
             
-            // Restaurer les dons
+            // Restaurer les dons (quantité pour les deux types)
             $dispatchs = self::getDispatch($id);
             foreach ($dispatchs as $d) {
-                $stmt = $pdo->prepare("UPDATE dons SET montant_restant = montant_restant + ? WHERE id = ?");
+                $stmt = $pdo->prepare("UPDATE dons SET quantite = quantite + ? WHERE id = ?");
                 $stmt->execute([$d['montant_utilise'], $d['don_id']]);
             }
             
             // Restaurer le besoin
             $stmt = $pdo->prepare("
                 UPDATE besoins 
-                SET quantite_satisfaite = quantite_satisfaite - ?,
-                    montant_restant = montant_restant + ?
+                SET quantite_satisfaite = quantite_satisfaite - ?
                 WHERE id = ?
             ");
             $stmt->execute([
                 $achat['quantite'],
-                $achat['montant_total'],
                 $achat['besoin_id']
             ]);
             
-            // Supprimer l'achat (cascade supprimera achat_dispatch)
+            // Supprimer l'achat (cascadera supprimera achat_dispatch)
             $stmt = $pdo->prepare("DELETE FROM achats WHERE id = ?");
             $stmt->execute([$id]);
             
             $pdo->commit();
             
             return true;
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+    
+    /**
+     * Couvrir un besoin avec les dons disponibles (dispatch direct)
+     */
+    public static function couvrirAvecDons($besoin_id) {
+        $pdo = getDatabase();
+        
+        try {
+            $pdo->beginTransaction();
+            
+            // Obtenir les détails du besoin
+            $stmt = $pdo->prepare("SELECT * FROM besoins WHERE id = ? FOR UPDATE");
+            $stmt->execute([$besoin_id]);
+            $besoin = $stmt->fetch();
+            
+            if (!$besoin) {
+                throw new Exception("Besoin non trouvé");
+            }
+            
+            $quantite_restante = floatval($besoin['quantite']) - floatval($besoin['quantite_satisfaite'] ?? 0);
+            
+            if ($quantite_restante <= 0) {
+                throw new Exception("Le besoin est déjà satisfait");
+            }
+            
+            $allocation = [];
+            $quantite_couverte = 0;
+            
+            // Dons en nature/materiaux avec même designation
+            $stmt = $pdo->prepare("
+                SELECT d.*, 
+                       d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0) as reste
+                FROM dons d
+                WHERE d.type = ? 
+                AND d.designation = ?
+                AND (d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0)) > 0
+                ORDER BY d.date_saisie ASC
+                FOR UPDATE
+            ");
+            $stmt->execute([$besoin['type'], $besoin['designation']]);
+            $dons_nature = $stmt->fetchAll();
+            
+            foreach ($dons_nature as $don) {
+                if ($quantite_couverte >= $quantite_restante) break;
+                
+                $reste = floatval($don['reste']);
+                $quantite_necessaire = $quantite_restante - $quantite_couverte;
+                $quantite_utilise = min($reste, $quantite_necessaire);
+                
+                // Créer le dispatch
+                $stmt = $pdo->prepare("
+                    INSERT INTO dispatch (don_id, besoin_id, quantite_attribuee)
+                    VALUES (?, ?, ?)
+                ");
+                $stmt->execute([$don['id'], $besoin_id, $quantite_utilise]);
+                
+                $allocation[] = [
+                    'don_id' => $don['id'],
+                    'type' => $don['type'],
+                    'quantite' => $quantite_utilise
+                ];
+                
+                $quantite_couverte += $quantite_utilise;
+            }
+            
+            // Dons en argent si encore besoin
+            if ($quantite_couverte < $quantite_restante) {
+                $stmt = $pdo->query("
+                    SELECT * FROM dons 
+                    WHERE type = 'argent' AND quantite > 0
+                    ORDER BY date_saisie ASC
+                    FOR UPDATE
+                ");
+                $dons_argent = $stmt->fetchAll();
+                
+                $montant_necessaire = ($quantite_restante - $quantite_couverte) * floatval($besoin['prix_unitaire']);
+                $montant_couvert = 0;
+                
+                foreach ($dons_argent as $don) {
+                    if ($montant_couvert >= $montant_necessaire) break;
+                    
+                    $montant_dispo = floatval($don['quantite']);
+                    $montant_utilise = min($montant_dispo, $montant_necessaire - $montant_couvert);
+                    
+                    // Mettre à jour le don
+                    $stmt = $pdo->prepare("UPDATE dons SET quantite = ? WHERE id = ?");
+                    $stmt->execute([round($montant_dispo - $montant_utilise, 2), $don['id']]);
+                    
+                    $allocation[] = [
+                        'don_id' => $don['id'],
+                        'type' => 'argent',
+                        'montant' => $montant_utilise
+                    ];
+                    
+                    $montant_couvert += $montant_utilise;
+                }
+                
+                // Créer un "achat" pour tracker l'utilisation de l'argent
+                $stmt = $pdo->prepare("
+                    INSERT INTO achats (besoin_id, ville_id, quantite, montant_base, frais_percent, montant_total, status)
+                    VALUES (?, ?, ?, ?, ?, ?, 'valide')
+                ");
+                $stmt->execute([
+                    $besoin_id,
+                    $besoin['ville_id'],
+                    ($quantite_restante - $quantite_couverte),
+                    $montant_couvert,
+                    0,
+                    $montant_couvert
+                ]);
+            }
+            
+            // Mettre à jour le besoin
+            $nouvelle_quantite_satisfaite = floatval($besoin['quantite_satisfaite'] ?? 0) + $quantite_restante;
+            $stmt = $pdo->prepare("UPDATE besoins SET quantite_satisfaite = ? WHERE id = ?");
+            $stmt->execute([round(min($nouvelle_quantite_satisfaite, $besoin['quantite']), 2), $besoin_id]);
+            
+            $pdo->commit();
+            
+            return [
+                'success' => true,
+                'quantite_couverte' => $quantite_restante,
+                'allocation' => $allocation
+            ];
+            
         } catch (Exception $e) {
             $pdo->rollBack();
             throw $e;

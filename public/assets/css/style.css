@@ -13,6 +13,7 @@
     --danger-hover: #d43b4d;
     --success: #3dd68c;
     --warning: #f0b429;
+    --info: #3498db;
     --border: #2a2d42;
     --radius: 10px;
 }
@@ -455,6 +456,15 @@ select option {
     background: #d9a020;
 }
 
+.btn-info {
+    background: var(--info);
+    color: white;
+}
+
+.btn-info:hover {
+    background: #1a88d6;
+}
+
 .btn-secondary {
     background: var(--bg-hover);
     color: var(--text-main);
@@ -480,6 +490,62 @@ select option {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+/* Dispatch Type Selection */
+.dispatch-types {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.dispatch-option {
+    cursor: pointer;
+    flex: 1;
+    min-width: 200px;
+}
+
+.dispatch-option input {
+    display: none;
+}
+
+.dispatch-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 100%;
+    background: #fff;
+}
+
+.dispatch-option input:checked + .dispatch-card {
+    border-color: #2196F3;
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.dispatch-option:hover .dispatch-card {
+    border-color: #90CAF9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dispatch-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.dispatch-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.dispatch-desc {
+    font-size: 0.8rem;
+    color: #666;
 }
 
 .inline-form {

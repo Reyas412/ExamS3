@@ -41,7 +41,6 @@
                         <td><?= $i + 1 ?></td>
                         <td><a href="/villes/<?= $ville['id'] ?>"><strong><?= htmlspecialchars($ville['nom']) ?></strong></a></td>
                         <td>
-                            <a href="/villes/<?= $ville['id'] ?>" class="btn btn-warning btn-sm">Voir</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>

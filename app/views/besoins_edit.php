@@ -17,7 +17,7 @@
                 </div>
                 <div class="form-group">
                     <label for="type">Type</label>
-                    <select id="type" name="type" required>
+                    <select id="type" name="type" required onchange="toggleBesoinFields()">
                         <option value="">-- Sélectionner --</option>
                         <option value="nature" <?= $besoin['type'] === 'nature' ? 'selected' : '' ?>>En nature</option>
                         <option value="matériaux" <?= $besoin['type'] === 'matériaux' ? 'selected' : '' ?>>En matériaux</option>
@@ -26,20 +26,26 @@
                 </div>
             </div>
             <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" id="designation-group">
                     <label for="designation">Désignation</label>
-                    <input type="text" id="designation" name="designation" placeholder="Ex: Riz, Tôle, Argent" value="<?= htmlspecialchars($besoin['designation']) ?>" required>
+                    <input type="text" id="designation" name="designation" placeholder="Ex: Riz, Tôle, Argent" value="<?= htmlspecialchars($besoin['designation']) ?>">
                 </div>
-                <div class="form-group">
-                    <label for="quantite">Quantité</label>
-                    <input type="number" id="quantite" name="quantite" step="0.01" min="0" value="<?= htmlspecialchars($besoin['quantite']) ?>" required>
+                <div class="form-group" id="montant-group" style="display: none;">
+                    <label for="montant">Montant</label>
+                    <input type="number" id="montant" name="montant" step="0.01" min="0" placeholder="Ex: 100000" value="<?= $besoin['type'] === 'argent' ? htmlspecialchars($besoin['quantite']) : '' ?>">
                 </div>
             </div>
-            <div class="form-row">
+            <div class="form-row" id="quantite-prix-row">
+                <div class="form-group">
+                    <label for="quantite">Quantité</label>
+                    <input type="number" id="quantite" name="quantite" step="0.01" min="0" value="<?= htmlspecialchars($besoin['quantite']) ?>">
+                </div>
                 <div class="form-group">
                     <label for="prix_unitaire">Prix unitaire</label>
-                    <input type="number" id="prix_unitaire" name="prix_unitaire" step="0.01" min="0" value="<?= htmlspecialchars($besoin['prix_unitaire']) ?>" required>
+                    <input type="number" id="prix_unitaire" name="prix_unitaire" step="0.01" min="0" value="<?= htmlspecialchars($besoin['prix_unitaire']) ?>">
                 </div>
+            </div>
+            <div class="form-row" id="date-row">
                 <div class="form-group">
                     <label for="date_saisie">Date de saisie (optionnel)</label>
                     <input type="datetime-local" id="date_saisie" name="date_saisie" value="<?= $besoin['date_saisie'] ? substr($besoin['date_saisie'], 0, 16) : '' ?>">
@@ -52,6 +58,43 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    toggleBesoinFields();
+});
+
+function toggleBesoinFields() {
+    const type = document.getElementById('type').value;
+    const designationGroup = document.getElementById('designation-group');
+    const montantGroup = document.getElementById('montant-group');
+    const quantitePrixRow = document.getElementById('quantite-prix-row');
+    const designationInput = document.getElementById('designation');
+    const montantInput = document.getElementById('montant');
+    const quantiteInput = document.getElementById('quantite');
+    const prixInput = document.getElementById('prix_unitaire');
+    
+    if (type === 'argent') {
+        designationGroup.style.display = 'none';
+        montantGroup.style.display = 'block';
+        quantitePrixRow.style.display = 'none';
+        
+        designationInput.removeAttribute('required');
+        quantiteInput.removeAttribute('required');
+        prixInput.removeAttribute('required');
+        montantInput.setAttribute('required', 'required');
+    } else {
+        designationGroup.style.display = 'block';
+        montantGroup.style.display = 'none';
+        quantitePrixRow.style.display = 'block';
+        
+        designationInput.setAttribute('required', 'required');
+        quantiteInput.setAttribute('required', 'required');
+        prixInput.setAttribute('required', 'required');
+        montantInput.removeAttribute('required');
+    }
+}
+</script>
 
 <div class="card">
     <div class="card-header">
@@ -69,7 +112,7 @@
                         <th>Ville</th>
                         <th>Type</th>
                         <th>Désignation</th>
-                        <th>Quantité</th>
+                        <th>Quantité/Montant</th>
                         <th>P.U.</th>
                         <th>Montant</th>
                         <th>Date</th>
@@ -83,9 +126,9 @@
                         <td><?= htmlspecialchars($b['ville_nom']) ?></td>
                         <td><span class="badge badge-type"><?= htmlspecialchars($b['type']) ?></span></td>
                         <td><?= htmlspecialchars($b['designation']) ?></td>
-                        <td><?= number_format($b['quantite'], 2, ',', ' ') ?></td>
-                        <td><?= number_format($b['prix_unitaire'], 2, ',', ' ') ?></td>
-                        <td><?= number_format($b['quantite'] * $b['prix_unitaire'], 2, ',', ' ') ?></td>
+                        <td><?= $b['type'] === 'argent' ? number_format($b['quantite'], 0, ',', ' ') . ' Ar' : number_format($b['quantite'], 2, ',', ' ') ?></td>
+                        <td><?= $b['type'] === 'argent' ? '-' : number_format($b['prix_unitaire'], 2, ',', ' ') ?></td>
+                        <td><?= number_format($b['quantite'] * $b['prix_unitaire'], 0, ',', ' ') ?></td>
                         <td><?= date('d/m/Y H:i', strtotime($b['date_saisie'])) ?></td>
                         <td>
                             <a href="/besoins/edit/<?= $b['id'] ?>" class="btn btn-warning btn-sm">Modifier</a>

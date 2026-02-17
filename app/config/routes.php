@@ -8,6 +8,10 @@ Flight::route('GET /dashboard/villes', 'DashboardController::villesRecap');
 Flight::route('GET /dashboard/besoins', 'DashboardController::besoinsRecap');
 Flight::route('GET /dashboard/dons', 'DashboardController::donsRecap');
 
+// Récapitulatif financier
+Flight::route('GET /financier', 'DashboardController::financier');
+Flight::route('GET /api/financier', 'DashboardController::apiFinancier');
+
 // Régions
 Flight::route('GET /regions', 'RegionController::index');
 Flight::route('GET /regions/@id', 'RegionController::view');
@@ -51,6 +55,8 @@ Flight::route('POST /achats/delete/@id', 'AchatController::delete');
 
 // API - Achats
 Flight::route('GET /api/besoins', 'AchatController::apiBesoins');
+Flight::route('GET /api/achats/dons-disponibles', 'AchatController::apiDonsDisponibles');
+Flight::route('POST /api/achats/couvrir-avec-dons', 'AchatController::apiCouvrirAvecDons');
 Flight::route('POST /api/achats/simuler', 'AchatController::apiSimuler');
 Flight::route('POST /api/achats/valider', 'AchatController::apiValider');
 Flight::route('GET /api/achats', 'AchatController::apiIndex');
