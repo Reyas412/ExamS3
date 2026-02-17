@@ -21,6 +21,43 @@
 
 <div class="card">
     <div class="card-header">
+        <h3>Type de Dispatch</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="margin-bottom: 16px;">
+            Choisissez le mode de distribution des dons :
+        </p>
+        <div class="dispatch-types">
+            <label class="dispatch-option">
+                <input type="radio" name="dispatch_type" value="fifo_dons" checked>
+                <div class="dispatch-card">
+                    <div class="dispatch-icon">🔵 1️⃣</div>
+                    <div class="dispatch-title">FIFO (par date des dons)</div>
+                    <div class="dispatch-desc">Le premier don saisi est le premier distribué</div>
+                </div>
+            </label>
+            <label class="dispatch-option">
+                <input type="radio" name="dispatch_type" value="proportionnel">
+                <div class="dispatch-card">
+                    <div class="dispatch-icon">🔵 2️⃣</div>
+                    <div class="dispatch-title">Dispatch proportionnel</div>
+                    <div class="dispatch-desc">Répartition équitable selon le poids des besoins</div>
+                </div>
+            </label>
+            <label class="dispatch-option">
+                <input type="radio" name="dispatch_type" value="fifo_besoins">
+                <div class="dispatch-card">
+                    <div class="dispatch-icon">🔵 3️⃣</div>
+                    <div class="dispatch-title">FIFO Besoins</div>
+                    <div class="dispatch-desc">Priorité aux besoins les plus anciens</div>
+                </div>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
         <h3>Actions</h3>
     </div>
     <div class="card-body">
@@ -28,6 +65,11 @@
         </p>
         <div class="btn-group">
             <form action="/dispatch/run" method="POST" class="inline-form">
+                <select name="dispatch_type" class="dispatch-select" style="padding: 10px; margin-right: 10px; border-radius: 5px; border: 1px solid #ddd;">
+                    <option value="fifo_dons">🔵 FIFO (par date des dons)</option>
+                    <option value="proportionnel">🔵 Dispatch proportionnel</option>
+                    <option value="fifo_besoins">🔵 FIFO Besoins</option>
+                </select>
                 <button type="submit" class="btn btn-primary" onclick="return confirm('Lancer la simulation du dispatch ? Cela va recalculer toutes les attributions.')">
                     &#9654; Lancer le Dispatch
                 </button>
@@ -76,6 +118,49 @@
                         <td><?= htmlspecialchars($d['besoin_designation']) ?> (besoin: <?= number_format($d['besoin_quantite'], 2, ',', ' ') ?>)</td>
                         <td><strong><?= number_format($d['quantite_attribuee'], 2, ',', ' ') ?></strong></td>
                         <td><?= date('d/m/Y H:i', strtotime($d['date_dispatch'])) ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
+<!-- Résultat des Achats (Besoins couverts par achats) -->
+<div class="card">
+    <div class="card-header">
+        <h3>Achats effectués (<?= count($achats) ?> achats)</h3>
+    </div>
+    <div class="card-body">
+        <?php if (empty($achats)): ?>
+            <p class="text-muted">Aucun achat effectué.</p>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ville</th>
+                        <th>Besoin</th>
+                        <th>Type</th>
+                        <th>Quantité</th>
+                        <th>Montant Total</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($achats as $i => $a): ?>
+                    <tr>
+                        <td><?= $i + 1 ?></td>
+                        <td><strong><?= htmlspecialchars($a['ville_nom']) ?></strong></td>
+                        <td><?= htmlspecialchars($a['besoin_designation']) ?></td>
+                        <td><span class="badge badge-type"><?= htmlspecialchars($a['besoin_type']) ?></span></td>
+                        <td><strong><?= number_format($a['quantite'], 2, ',', ' ') ?></strong></td>
+                        <td><?= number_format($a['montant_total'], 2, ',', ' ') ?> Ar</td>
+                        <td><span class="badge <?= $a['status'] === 'valide' ? 'badge-success' : 'badge-warning' ?>"><?= htmlspecialchars($a['status']) ?></span></td>
+                        <td><?= date('d/m/Y H:i', strtotime($a['created_at'])) ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>

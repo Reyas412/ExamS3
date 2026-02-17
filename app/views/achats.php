@@ -1,5 +1,5 @@
 <!-- Gestion des Achats -->
-<h2 style="margin-bottom: 20px;">🛒 Gestion des Achats</h2>
+<h2 style="margin-bottom: 20px;">💰 Gestion des Achats / Couverture</h2>
 
 <!-- Statistiques -->
 <div class="stats-grid">
@@ -52,6 +52,58 @@
             <button type="submit" class="btn btn-secondary">Filtrer</button>
             <button type="button" class="btn btn-info" onclick="loadRecap()">🔄 Actualiser</button>
         </form>
+    </div>
+</div>
+
+<!-- Liste des besoins à couvrir -->
+<div class="card" style="margin-bottom: 20px;">
+    <div class="card-header">
+        <h3>📦 Besoins à couvrir</h3>
+    </div>
+    <div class="card-body">
+        <?php if (empty($besoins)): ?>
+            <p class="text-muted">Aucun besoin restant à couvrir.</p>
+        <?php else: ?>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ville</th>
+                        <th>Type</th>
+                        <th>Désignation</th>
+                        <th>Quantité Restante</th>
+                        <th>Prix Unit.</th>
+                        <th>Montant Total</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($besoins as $i => $b): ?>
+                    <?php 
+                        $quantite_restante = floatval($b['quantite_restante']);
+                        $montant_total = $quantite_restante * floatval($b['prix_unitaire']);
+                    ?>
+                    <tr>
+                        <td><?= $i + 1 ?></td>
+                        <td><?= htmlspecialchars($b['ville_nom']) ?></td>
+                        <td><span class="badge badge-type"><?= htmlspecialchars($b['type']) ?></span></td>
+                        <td><?= htmlspecialchars($b['designation']) ?></td>
+                        <td><?= number_format($quantite_restante, 2, ',', ' ') ?></td>
+                        <td><?= number_format($b['prix_unitaire'], 2, ',', ' ') ?></td>
+                        <td><strong><?= number_format($montant_total, 0, ',', ' ') ?></strong></td>
+                        <td>
+                            <button type="button" class="btn btn-success btn-sm" 
+                                onclick="openCouvrirModal(<?= $b['id'] ?>, '<?= htmlspecialchars($b['designation']) ?>', <?= $quantite_restante ?>, <?= $b['prix_unitaire'] ?>, '<?= $b['type'] ?>')">
+                                💰 Couvrir
+                            </button>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -108,48 +160,53 @@
     </div>
 </div>
 
-<!-- Modal pour achat -->
-<div id="achat-modal" class="modal" style="display: none;">
-    <div class="modal-content">
+<!-- Modal pour couvrir -->
+<div id="couvrir-modal" class="modal" style="display: none;">
+    <div class="modal-content" style="background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%); max-height: 90vh; overflow-y: auto;">
         <span class="close" onclick="closeModal()">&times;</span>
-        <h3>🛒 Achat</h3>
-        <form id="achat-form">
-            <input type="hidden" id="modal-besoin-id">
-            
-            <div style="margin-bottom: 15px;">
-                <label>Besoin:</label>
-                <span id="modal-besoin-nom" style="font-weight: bold;"></span>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label>Quantité restante:</label>
-                <span id="modal-besoin-restant"></span>
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="modal-quantite">Quantité à acheter:</label>
-                <input type="number" id="modal-quantite" min="0.01" step="0.01" required style="width: 100%; padding: 8px;">
-            </div>
-            
-            <div style="margin-bottom: 15px;">
-                <label for="modal-frais">Frais (%):</label>
-                <input type="number" id="modal-frais" min="0" max="100" step="0.1" style="width: 100%; padding: 8px;">
-            </div>
-            
-            <div style="margin-bottom: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
-                <p>Montant base: <strong id="modal-montant-base">0</strong></p>
-                <p>Montant total (avec frais): <strong id="modal-montant-total">0</strong></p>
-            </div>
-            
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="btn btn-secondary" onclick="simulerAchat()">🔍 Simuler</button>
-                <button type="button" class="btn btn-primary" onclick="validerAchat()">✓ Valider</button>
-            </div>
-        </form>
+        <h3 style="text-align: center; color: #1976D2; margin-bottom: 20px;">💰 Couvrir un besoin</h3>
         
-        <div id="simulation-result" style="margin-top: 20px; display: none;">
-            <h4>Résultat de la simulation:</h4>
-            <div id="simulation-details"></div>
+        <!-- Info du besoin -->
+        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #2196F3;">
+            <h4 style="color: #1565C0; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">📦 <span>Besoin</span></h4>
+            <p style="margin: 8px 0; font-size: 15px; color: #000;"><strong>Nom:</strong> <span id="modal-besoin-nom" style="color: #000; font-weight: bold;"></span></p>
+            <p style="margin: 8px 0; font-size: 15px; color: #000;"><strong>Quantité restante:</strong> <span id="modal-besoin-restant" style="color: #000; font-weight: bold; background: #fff; padding: 2px 8px; border-radius: 4px;"></span></p>
+            <p style="margin: 8px 0; font-size: 15px; color: #000;"><strong>Prix unitaire:</strong> <span id="modal-prix-unitaire-display" style="color: #000; font-weight: bold; background: #fff; padding: 2px 8px; border-radius: 4px;"></span> Ar</p>
+        </div>
+        
+        <!-- Achat -->
+        <div id="achat-section" style="background: white; padding: 20px; border-radius: 12px; border: 2px solid #4CAF50;">
+            <h4 style="color: #2E7D32; margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">💳 <span>Achat</span></h4>
+            <form id="achat-form">
+                <input type="hidden" id="modal-besoin-id">
+                <input type="hidden" id="modal-prix-unitaire">
+                <input type="hidden" id="modal-besoin-type">
+                
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label for="modal-quantite" style="color: #333; font-weight: 600; display: block; margin-bottom: 6px;">Quantité à acheter:</label>
+                    <input type="number" id="modal-quantite" min="0.01" step="0.01" required style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 18px;">
+                    <label for="modal-frais" style="color: #333; font-weight: 600; display: block; margin-bottom: 6px;">Frais (%):</label>
+                    <input type="number" id="modal-frais" min="0" max="100" step="0.1" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; box-sizing: border-box;">
+                </div>
+                
+                <div class="simulation-box" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); border: 2px solid #4CAF50; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                    <p style="margin: 10px 0; font-size: 16px; color: #000;">Montant base: <strong id="modal-montant-base" style="color: #1565C0; font-size: 18px;">0</strong> Ar</p>
+                    <p style="margin: 10px 0; font-size: 18px; color: #000;">Montant total (avec frais): <strong id="modal-montant-total" style="color: #2E7D32; font-size: 22px;">0</strong> Ar</p>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 25px;">
+                    <button type="button" class="btn btn-secondary" onclick="simulerAchat()" style="flex: 1; padding: 14px; font-size: 16px; font-weight: 600;">🔍 Simuler</button>
+                    <button type="submit" class="btn btn-success" style="flex: 1; padding: 14px; font-size: 16px; font-weight: 600;">💰 Acheter</button>
+                </div>
+            </form>
+            
+            <div id="simulation-result" style="display: none; margin-top: 20px; background: #fff3cd; padding: 15px; border-radius: 8px; border: 2px solid #ffc107;">
+                <h4 style="color: #856404; margin-bottom: 10px;">📊 Résultat de la simulation:</h4>
+                <div id="simulation-details" style="color: #000;"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -163,20 +220,69 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .modal-content {
     background-color: white;
-    margin: 10% auto;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 25px;
+    border-radius: 10px;
     width: 90%;
-    max-width: 600px;
+    max-width: 450px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.modal-content h3 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 10px;
+}
+.modal-content h4 {
+    margin-top: 0;
+    color: #555;
+}
+.modal-content label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+.modal-content input {
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+.modal-content input:focus {
+    border-color: #4CAF50;
+    outline: none;
+}
+.simulation-box {
+    background: #e8f5e9;
+    border: 1px solid #4CAF50;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+.simulation-box p {
+    margin: 8px 0;
+    font-size: 14px;
 }
 .close {
     float: right;
     font-size: 28px;
     font-weight: bold;
     cursor: pointer;
+    color: #999;
+}
+.close:hover {
+    color: #333;
+}
+.form-group {
+    margin-bottom: 15px;
 }
 </style>
 
@@ -190,6 +296,18 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('modal-frais').value = data.frais_percent;
         });
     loadRecap();
+    
+    // Vérifier s'il y a un besoin_id dans l'URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const besoinId = urlParams.get('besoin_id');
+    if (besoinId) {
+        const besoins = <?= json_encode($besoins) ?>;
+        const besoin = besoins.find(b => b.id == besoinId);
+        if (besoin) {
+            const quantiteRestante = parseFloat(besoin.quantite_restante);
+            openCouvrirModal(besoin.id, besoin.designation, quantiteRestante, parseFloat(besoin.prix_unitaire), besoin.type);
+        }
+    }
 });
 
 // Sauvegarder les frais
@@ -221,32 +339,51 @@ function loadRecap() {
 }
 
 // Ouvrir le modal
-function openAchatModal(besoinId, besoinNom, quantiteRestante) {
+function openCouvrirModal(besoinId, besoinNom, quantiteRestante, prixUnitaire, besoinType) {
     document.getElementById('modal-besoin-id').value = besoinId;
     document.getElementById('modal-besoin-nom').textContent = besoinNom;
     document.getElementById('modal-besoin-restant').textContent = quantiteRestante;
+    document.getElementById('modal-prix-unitaire').value = prixUnitaire;
+    document.getElementById('modal-prix-unitaire-display').textContent = prixUnitaire;
+    document.getElementById('modal-besoin-type').value = besoinType;
     document.getElementById('modal-quantite').max = quantiteRestante;
     document.getElementById('modal-quantite').value = quantiteRestante;
     document.getElementById('simulation-result').style.display = 'none';
-    document.getElementById('achat-modal').style.display = 'block';
+    document.getElementById('couvrir-modal').style.display = 'block';
+    
+    // Mettre à jour le montant
+    updateMontant();
 }
 
 // Fermer le modal
 function closeModal() {
-    document.getElementById('achat-modal').style.display = 'none';
+    document.getElementById('couvrir-modal').style.display = 'none';
+    const url = new URL(window.location);
+    url.searchParams.delete('besoin_id');
+    window.history.replaceState({}, '', url);
 }
 
 // Calculer le montant
-document.getElementById('modal-quantite').addEventListener('input', updateMontant);
-document.getElementById('modal-frais').addEventListener('input', updateMontant);
-
 function updateMontant() {
     const quantite = parseFloat(document.getElementById('modal-quantite').value) || 0;
     const frais = parseFloat(document.getElementById('modal-frais').value) || 0;
-    // Le prix unitaire devrait être récupéré du besoin
-    document.getElementById('modal-montant-base').textContent = 'À calculer...';
-    document.getElementById('modal-montant-total').textContent = 'À calculer...';
+    const prixUnitaire = parseFloat(document.getElementById('modal-prix-unitaire').value) || 0;
+    
+    const montantBase = quantite * prixUnitaire;
+    const montantTotal = montantBase * (1 + frais / 100);
+    
+    document.getElementById('modal-montant-base').textContent = Math.round(montantBase).toLocaleString();
+    document.getElementById('modal-montant-total').textContent = Math.round(montantTotal).toLocaleString();
 }
+
+document.getElementById('modal-quantite').addEventListener('input', updateMontant);
+document.getElementById('modal-frais').addEventListener('input', updateMontant);
+
+// Soumission du formulaire
+document.getElementById('achat-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    validerAchat();
+});
 
 // Simuler l'achat
 function simulerAchat() {
@@ -266,24 +403,21 @@ function simulerAchat() {
             return;
         }
         
-        let html = '<p>Montant total: <strong>' + data.montant_total.toLocaleString() + '</strong></p>';
-        html += '<p>Montant couvert: <strong>' + data.montant_couvert.toLocaleString() + '</strong></p>';
+        let html = '<p>Montant total: <strong>' + Math.round(data.montant_total).toLocaleString() + '</strong></p>';
+        html += '<p>Montant couvert: <strong>' + Math.round(data.montant_couvert).toLocaleString() + '</strong></p>';
         
         if (data.manquant > 0) {
-            html += '<p style="color: red;">Manquant: <strong>' + data.manquant.toLocaleString() + '</strong></p>';
+            html += '<p style="color: red;">Manquant: <strong>' + Math.round(data.manquant).toLocaleString() + '</strong></p>';
         }
         
         html += '<h5>Dons utilisés (FIFO):</h5><ul>';
         data.allocation.forEach(a => {
-            html += '<li>' + a.don_designation + ': ' + a.montant_utilise.toLocaleString() + '</li>';
+            html += '<li>' + a.don_designation + ': ' + Math.round(a.montant_utilise).toLocaleString() + '</li>';
         });
         html += '</ul>';
         
         document.getElementById('simulation-details').innerHTML = html;
         document.getElementById('simulation-result').style.display = 'block';
-        
-        document.getElementById('modal-montant-base').textContent = data.montant_base.toLocaleString();
-        document.getElementById('modal-montant-total').textContent = data.montant_total.toLocaleString();
     })
     .catch(err => alert('Erreur: ' + err));
 }

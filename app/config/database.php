@@ -9,7 +9,7 @@ define('DB_NAME', 'gnbrc');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 
-// Pour XAMPP, utiliser le socket Unix
+// Socket XAMPP
 define('DB_SOCKET', '/opt/lampp/var/mysql/mysql.sock');
 
 /**
@@ -25,7 +25,7 @@ function getDatabase() {
         $pass = DB_PASS;
         $charset = 'utf8mb4';
         
-        // Utiliser le socket XAMPP pour la connexion
+        // Utiliser le socket XAMPP
         $dsn = "mysql:host={$host};dbname={$database};charset={$charset};unix_socket=" . DB_SOCKET;
 
         $options = [
@@ -37,10 +37,27 @@ function getDatabase() {
         try {
             $pdo = new PDO($dsn, $user, $pass, $options);
         } catch (PDOException $e) {
-            http_response_code(500);
-            header('Content-Type: application/json');
-            echo json_encode(['error' => 'Database connection failed', 'message' => $e->getMessage()]);
-            exit;
+            // Ajouter du debug
+            $errorMsg = $e->getMessage();
+            
+            // Essayer aussi sans unix_socket
+            try {
+                $dsn_alt = "mysql:host=localhost;dbname={$database};charset={$charset};port=3306";
+                $pdo_alt = new PDO($dsn_alt, $user, $pass, $options);
+                // Si ça marche, utiliser cette connexion
+                $pdo = $pdo_alt;
+            } catch (PDOException $e2) {
+                http_response_code(500);
+                header('Content-Type: application/json');
+                echo json_encode([
+                    'error' => 'Database connection failed', 
+                    'message' => $errorMsg,
+                    'dsn' => $dsn,
+                    'alt_dsn' => $dsn_alt,
+                    'alt_error' => $e2->getMessage()
+                ]);
+                exit;
+            }
         }
     }
     

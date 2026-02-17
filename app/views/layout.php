@@ -43,6 +43,10 @@
                     <span class="nav-icon">&#128722;</span>
                     Achats
                 </a>
+                <a href="/financier" class="nav-link <?= ($active ?? '') === 'financier' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#128176;</span>
+                    Financier
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <p>&copy; 2026 BNGRC</p>

@@ -11,8 +11,28 @@ class AchatController {
         $ville_id = Flight::request()->query['ville_id'] ?? null;
         $achats = Achat::getAll($ville_id);
         
+        // Récupérer les besoins restants qui peuvent être couverts
+        $pdo = getDatabase();
+        $params = [];
+        $sql = "
+            SELECT b.*, v.nom as ville_nom,
+                   (b.quantite - COALESCE(b.quantite_satisfaite, 0)) as quantite_restante
+            FROM besoins b
+            LEFT JOIN villes v ON b.ville_id = v.id
+            WHERE (b.quantite - COALESCE(b.quantite_satisfaite, 0)) > 0
+        ";
+        if ($ville_id) {
+            $sql .= " AND b.ville_id = ?";
+            $params[] = $ville_id;
+        }
+        $sql .= " ORDER BY v.nom, b.designation";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $besoins = $stmt->fetchAll();
+        
         Flight::render('achats', [
             'achats' => $achats,
+            'besoins' => $besoins,
             'ville_id' => $ville_id
         ], 'body_content');
         Flight::render('layout', [
@@ -116,6 +136,99 @@ class AchatController {
         $achats = Achat::getAll($ville_id);
         
         Flight::json($achats);
+    }
+    
+    /**
+     * API: Dons disponibles pour un besoin
+     * GET /api/achats/dons-disponibles?besoin_id=...
+     */
+    public static function apiDonsDisponibles() {
+        $besoin_id = Flight::request()->query['besoin_id'] ?? null;
+        
+        if (!$besoin_id) {
+            Flight::json(['error' => 'besoin_id requis'], 400);
+            return;
+        }
+        
+        $pdo = getDatabase();
+        
+        // Obtenir les détails du besoin
+        $stmt = $pdo->prepare("SELECT * FROM besoins WHERE id = ?");
+        $stmt->execute([$besoin_id]);
+        $besoin = $stmt->fetch();
+        
+        if (!$besoin) {
+            Flight::json(['error' => 'Besoin non trouvé'], 404);
+            return;
+        }
+        
+        $dons = [];
+        
+        // Dons en nature/materiaux avec même designation
+        $stmt = $pdo->prepare("
+            SELECT d.*, 
+                   d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0) as quantite_restante
+            FROM dons d
+            WHERE d.type = ? 
+            AND d.designation = ?
+            AND (d.quantite - COALESCE((SELECT SUM(quantite_attribuee) FROM dispatch WHERE don_id = d.id), 0)) > 0
+            ORDER BY d.date_saisie ASC
+        ");
+        $stmt->execute([$besoin['type'], $besoin['designation']]);
+        $dons_nature = $stmt->fetchAll();
+        
+        foreach ($dons_nature as $don) {
+            $dons[] = [
+                'id' => $don['id'],
+                'type' => $don['type'],
+                'designation' => $don['designation'],
+                'quantite_restante' => floatval($don['quantite_restante']),
+                'montant_disponible' => floatval($don['quantite_restante']) * floatval($besoin['prix_unitaire'])
+            ];
+        }
+        
+        // Dons en argent (toujours disponibles pour tous les besoins)
+        $stmt = $pdo->query("
+            SELECT d.*
+            FROM dons d
+            WHERE d.type = 'argent' 
+            AND d.quantite > 0
+            ORDER BY d.date_saisie ASC
+        ");
+        $dons_argent = $stmt->fetchAll();
+        
+        foreach ($dons_argent as $don) {
+            $dons[] = [
+                'id' => $don['id'],
+                'type' => 'argent',
+                'designation' => 'Argent',
+                'quantite_restante' => null,
+                'montant_disponible' => floatval($don['quantite'])
+            ];
+        }
+        
+        Flight::json($dons);
+    }
+    
+    /**
+     * API: Couvrir un besoin avec les dons disponibles
+     * POST /api/achats/couvrir-avec-dons
+     */
+    public static function apiCouvrirAvecDons() {
+        $data = Flight::request()->data;
+        $besoin_id = $data->besoin_id;
+        
+        if (!$besoin_id) {
+            Flight::json(['error' => 'besoin_id requis'], 400);
+            return;
+        }
+        
+        try {
+            $result = Achat::couvrirAvecDons($besoin_id);
+            Flight::json($result);
+        } catch (Exception $e) {
+            Flight::json(['error' => $e->getMessage()], 400);
+        }
     }
     
     /**

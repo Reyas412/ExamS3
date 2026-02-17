@@ -187,4 +187,70 @@ class DashboardController {
             'active' => 'dashboard'
         ]);
     }
+    
+    /**
+     * Page de récapitulation financière
+     */
+    public static function financier() {
+        $stats = self::getFinancierStats();
+        
+        Flight::render('dashboard_financier', [
+            'stats' => $stats
+        ], 'body_content');
+        Flight::render('layout', [
+            'title' => 'Récapitulatif Financier',
+            'active' => 'financier'
+        ]);
+    }
+    
+    /**
+     * API: Statistiques financières
+     * GET /api/financier
+     */
+    public static function apiFinancier() {
+        $stats = self::getFinancierStats();
+        Flight::json($stats);
+    }
+    
+    /**
+     * Calcul les statistiques financières
+     */
+    private static function getFinancierStats() {
+        $pdo = getDatabase();
+        
+        // Total des besoins (montant) - utiliser COALESCE pour éviter les problèmes avec NULL
+        $stmt = $pdo->query("SELECT COALESCE(SUM(COALESCE(quantite, 0) * COALESCE(prix_unitaire, 0)), 0) FROM besoins");
+        $totalBesoins = floatval($stmt->fetchColumn());
+        
+        // Montant satisfait (basé sur quantite_satisfaite * prix_unitaire)
+        $stmt = $pdo->query("SELECT COALESCE(SUM(COALESCE(quantite_satisfaite, 0) * COALESCE(prix_unitaire, 0)), 0) FROM besoins WHERE COALESCE(quantite_satisfaite, 0) > 0");
+        $montantSatisfait = floatval($stmt->fetchColumn());
+        
+        // Montant restant
+        $montantRestant = $totalBesoins - $montantSatisfait;
+        
+        // Total des dons en argent reçus
+        $stmt = $pdo->query("SELECT COALESCE(SUM(COALESCE(quantite, 0)), 0) FROM dons WHERE type = 'argent'");
+        $totalDonsArgent = floatval($stmt->fetchColumn());
+        
+        // Dons en argent utilisés
+        $stmt = $pdo->query("SELECT COALESCE(SUM(COALESCE(montant_utilise, 0)), 0) FROM achat_dispatch");
+        $donsArgentUtilises = floatval($stmt->fetchColumn());
+        
+        // Dons en argent restants
+        $donsArgentRestants = $totalDonsArgent - $donsArgentUtilises;
+        
+        // Taux de couverture financier
+        $tauxCouverture = $totalBesoins > 0 ? round(($montantSatisfait / $totalBesoins) * 100, 1) : 0;
+        
+        return [
+            'total_besoins' => $totalBesoins,
+            'montant_satisfait' => $montantSatisfait,
+            'montant_restant' => $montantRestant,
+            'total_dons_argent' => $totalDonsArgent,
+            'dons_argent_utilises' => $donsArgentUtilises,
+            'dons_argent_restants' => $donsArgentRestants,
+            'taux_couverture' => $tauxCouverture
+        ];
+    }
 }

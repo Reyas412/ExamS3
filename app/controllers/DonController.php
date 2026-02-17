@@ -30,15 +30,33 @@ class DonController {
         $type = $data->type;
         $designation = $data->designation;
         $quantite = $data->quantite;
+        $unite = $data->unite ?: null;
+        $montant = $data->montant;
         $date_saisie = $data->date_saisie ?: null;
 
-        if (empty($type) || empty($designation) || empty($quantite)) {
-            Flight::redirect('/dons?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+        if (empty($type)) {
+            Flight::redirect('/dons?error=' . urlencode('Le type est obligatoire'));
             return;
         }
 
+        // Pour type argent, on utilise montant au lieu de quantite/designation
+        if ($type === 'argent') {
+            if (empty($montant)) {
+                Flight::redirect('/dons?error=' . urlencode('Le montant est obligatoire pour un don en argent'));
+                return;
+            }
+            $designation = 'Argent';
+            $quantite = $montant; // Stocker le montant dans quantite pour simplificer
+            $unite = 'Ar';
+        } else {
+            if (empty($designation) || empty($quantite)) {
+                Flight::redirect('/dons?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+                return;
+            }
+        }
+
         try {
-            Don::create($type, $designation, $quantite, $date_saisie);
+            Don::create($type, $designation, $quantite, $unite, $date_saisie);
             Flight::redirect('/dons?success=' . urlencode('Don ajouté avec succès'));
         } catch (Exception $e) {
             Flight::redirect('/dons?error=' . urlencode('Erreur: ' . $e->getMessage()));
@@ -65,15 +83,33 @@ class DonController {
         $type = $data->type;
         $designation = $data->designation;
         $quantite = $data->quantite;
+        $unite = $data->unite ?: null;
+        $montant = $data->montant;
         $date_saisie = $data->date_saisie ?: null;
 
-        if (empty($type) || empty($designation) || empty($quantite)) {
-            Flight::redirect('/dons/edit/' . $id . '?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+        if (empty($type)) {
+            Flight::redirect('/dons/edit/' . $id . '?error=' . urlencode('Le type est obligatoire'));
             return;
         }
 
+        // Pour type argent, on utilise montant au lieu de quantite/designation
+        if ($type === 'argent') {
+            if (empty($montant)) {
+                Flight::redirect('/dons/edit/' . $id . '?error=' . urlencode('Le montant est obligatoire pour un don en argent'));
+                return;
+            }
+            $designation = 'Argent';
+            $quantite = $montant;
+            $unite = 'Ar';
+        } else {
+            if (empty($designation) || empty($quantite)) {
+                Flight::redirect('/dons/edit/' . $id . '?error=' . urlencode('Tous les champs obligatoires doivent être remplis'));
+                return;
+            }
+        }
+
         try {
-            Don::update($id, $type, $designation, $quantite, $date_saisie);
+            Don::update($id, $type, $designation, $quantite, $unite, $date_saisie);
             Flight::redirect('/dons?success=' . urlencode('Don modifié avec succès'));
         } catch (Exception $e) {
             Flight::redirect('/dons/edit/' . $id . '?error=' . urlencode('Erreur: ' . $e->getMessage()));

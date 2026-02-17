@@ -15,7 +15,7 @@
                         <th>#</th>
                         <th>Type</th>
                         <th>Designation</th>
-                        <th>Quantite</th>
+                        <th>Quantite/Montant</th>
                         <th>Date</th>
                         <th>Actions</th>
                     </tr>
@@ -26,7 +26,7 @@
                         <td><?= $i + 1 ?></td>
                         <td><span class="badge badge-type"><?= htmlspecialchars($d['type']) ?></span></td>
                         <td><?= htmlspecialchars($d['designation']) ?></td>
-                        <td><?= number_format($d['quantite'], 2, ',', ' ') ?></td>
+                        <td><?= $d['type'] === 'argent' ? number_format($d['quantite'], 0, ',', ' ') . ' Ar' : number_format($d['quantite'], 2, ',', ' ') ?></td>
                         <td><?= date('d/m/Y H:i', strtotime($d['date_saisie'])) ?></td>
                         <td>
                             <a href="/dons/edit/<?= $d['id'] ?>" class="btn btn-warning btn-sm">Modifier</a>

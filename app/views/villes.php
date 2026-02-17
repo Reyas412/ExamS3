@@ -25,7 +25,6 @@
                         <td><a href="/villes/<?= $ville['id'] ?>"><strong><?= htmlspecialchars($ville['nom']) ?></strong></a></td>
                         <td><?= htmlspecialchars($ville['region_nom']) ?></td>
                         <td>
-                            <a href="/villes/<?= $ville['id'] ?>" class="btn btn-info btn-sm">Voir</a>
                             <a href="/villes/edit/<?= $ville['id'] ?>" class="btn btn-warning btn-sm">Modifier</a>
                             <form action="/villes/delete/<?= $ville['id'] ?>" method="POST" class="inline-form" onsubmit="return confirm('Supprimer cette ville et tous ses besoins ?')">
                                 <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
