@@ -297,8 +297,8 @@ class DispatchModel {
             FROM besoins b
             JOIN villes v ON b.ville_id = v.id
             LEFT JOIN dispatch di ON di.besoin_id = b.id
-            WHERE v.region_id = ?
-            GROUP BY v.region_id
+            WHERE v.idregion = ?
+            GROUP BY v.idregion
         ");
         $stmt->execute([$region_id]);
         $result = $stmt->fetch();

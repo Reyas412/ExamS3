@@ -16,8 +16,8 @@ class SimulationController {
                    COALESCE(SUM(di.quantite_attribuee), 0) AS quantite_couverte
             FROM besoins b
             JOIN villes v ON b.ville_id = v.id
-            LEFT JOIN dispatch di ON di.besoin_id = b.id AND di.type_dispatch = 'don'
-            WHERE b.type IN ('nature', 'materiaux')
+            LEFT JOIN dispatch di ON di.besoin_id = b.id AND di.don_id IS NOT NULL
+            WHERE b.type IN ('nature', 'materiaux', 'matériaux')
             GROUP BY b.id
             HAVING COALESCE(SUM(di.quantite_attribuee), 0) < b.quantite
             ORDER BY b.quantite - COALESCE(SUM(di.quantite_attribuee), 0) DESC
@@ -31,30 +31,34 @@ class SimulationController {
         
         // Récupérer les achats effectués
         $achats = $pdo->query("
-            SELECT a.*, b.designation, v.nom AS ville_nom
+            SELECT a.*, b.designation, v.nom AS ville_nom, c.frais_achat AS frais_achat
             FROM achats a
             JOIN besoins b ON a.besoin_id = b.id
             JOIN villes v ON b.ville_id = v.id
+            JOIN config c ON a.idconfig = c.id
             ORDER BY a.date_achat DESC
         ")->fetchAll();
         
         // Récupérer l'argent disponible
         $argentTotal = $pdo->query("
-            SELECT COALESCE(SUM(quantite), 0) - COALESCE(SUM(d.quantite_distribuee), 0) as argent_restant
-            FROM dons d
-            LEFT JOIN (
-                SELECT don_id, SUM(quantite_attribuee) as quantite_distribuee
-                FROM dispatch
-                GROUP BY don_id
-            ) d ON d.id = d.don_id
-            WHERE d.type = 'argent'
+            SELECT COALESCE(SUM(quantite), 0) as total
+            FROM dons WHERE type = 'argent'
         ")->fetch();
-        
-        $argentRestant = floatval($argentTotal['argent_restant'] ?? 0);
-        
-        // Récupérer les frais d'achat
-        $fraisStmt = $pdo->query("SELECT valeur FROM config WHERE cle = 'frais_achat'");
-        $fraisAchat = floatval($fraisStmt->fetch()['valeur'] ?? 10);
+        $argentBrut = floatval($argentTotal['total'] ?? 0);
+
+        $argentUtilise = $pdo->query("
+            SELECT COALESCE(SUM(montant_total), 0) as total
+            FROM achats
+        ")->fetch();
+        $argentRestant = $argentBrut - floatval($argentUtilise['total'] ?? 0);
+
+        // Récupérer la configuration (frais d'achat)
+        $config = $pdo->query("SELECT id, frais_achat FROM config ORDER BY id ASC LIMIT 1")->fetch();
+        if (!$config) {
+            $pdo->prepare("INSERT INTO config (id, frais_achat) VALUES (1, 10)")->execute();
+            $config = ['id' => 1, 'frais_achat' => 10];
+        }
+        $fraisAchat = floatval($config['frais_achat'] ?? 10);
         
         Flight::render('simulation', [
             'besoins' => $besoins,
@@ -81,8 +85,13 @@ class SimulationController {
             $pdo->beginTransaction();
             
             // Récupérer les frais d'achat
-            $fraisStmt = $pdo->query("SELECT valeur FROM config WHERE cle = 'frais_achat'");
-            $fraisAchat = floatval($fraisStmt->fetch()['valeur'] ?? 10);
+            $config = $pdo->query("SELECT id, frais_achat FROM config ORDER BY id ASC LIMIT 1")->fetch();
+            if (!$config) {
+                $pdo->prepare("INSERT INTO config (id, frais_achat) VALUES (1, 10)")->execute();
+                $config = ['id' => 1, 'frais_achat' => 10];
+            }
+            $configId = intval($config['id']);
+            $fraisAchat = floatval($config['frais_achat'] ?? 10);
             
             // Récupérer le besoin
             $stmt = $pdo->prepare("
@@ -110,7 +119,7 @@ class SimulationController {
             $donCouvert = $pdo->prepare("
                 SELECT COALESCE(SUM(quantite_attribuee), 0) as total
                 FROM dispatch
-                WHERE besoin_id = ? AND type_dispatch = 'don'
+                WHERE besoin_id = ? AND don_id IS NOT NULL
             ");
             $donCouvert->execute([$besoin_id]);
             $quantiteDon = floatval($donCouvert->fetch()['total']);
@@ -131,7 +140,7 @@ class SimulationController {
             $argentTotal = floatval($argentStmt->fetch()['total']);
             
             $utiliseStmt = $pdo->query("
-                SELECT COALESCE(SUM(montant_utilise), 0) as total
+                SELECT COALESCE(SUM(montant_total), 0) as total
                 FROM achats
             ");
             $argentUtilise = floatval($utiliseStmt->fetch()['total']);
@@ -143,18 +152,20 @@ class SimulationController {
             
             // Créer l'achat
             $insertAchat = $pdo->prepare("
-                INSERT INTO achats (besoin_id, montant_utilise, frais, montant_total, quantiteAchetee)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO achats (besoin_id, quantite_achetee, montant_base, idconfig, montant_frais, montant_total)
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
+            $montantFrais = $montantBase * ($fraisAchat / 100);
             $insertAchat->execute([
                 $besoin_id,
+                $quantiteRestante,
                 $montantBase,
-                $fraisAchat,
-                $montantAvecFrais,
-                $quantiteRestante
+                $configId,
+                $montantFrais,
+                $montantAvecFrais
             ]);
             
-            // Créer le dispatch
+            // Créer le dispatch pour l'achat
             $insertDispatch = $pdo->prepare(
                 "INSERT INTO dispatch (don_id, besoin_id, quantite_attribuee) VALUES (NULL, ?, ?)"
             );
@@ -162,7 +173,7 @@ class SimulationController {
             
             $pdo->commit();
             
-            Flight::redirect('/simulation?success=' . urlencode("Achat validé pour {$quantiteRestante} unités"));
+            Flight::redirect('/dispatch?success=' . urlencode("Achat validé pour " . number_format($quantiteRestante, 2, ',', ' ') . " unités"));
             
         } catch (Exception $e) {
             $pdo->rollBack();
@@ -187,6 +198,7 @@ class SimulationController {
             SELECT COALESCE(SUM(di.quantite_attribuee * b.prix_unitaire), 0) as total
             FROM dispatch di
             JOIN besoins b ON di.besoin_id = b.id
+            WHERE di.don_id IS NOT NULL
         ")->fetch()['total'];
         
         // Argent utilisé pour les achats

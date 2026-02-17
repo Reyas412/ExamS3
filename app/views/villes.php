@@ -6,8 +6,8 @@
     <div class="card-body">
         <form action="/villes/create" method="POST" class="form-inline">
             <div class="form-group">
-                <label for="region_id">Région</label>
-                <select id="region_id" name="region_id" required>
+                <label for="idregion">Région</label>
+                <select id="idregion" name="idregion" required>
                     <option value="">-- Sélectionner une région --</option>
                     <?php foreach ($regions as $r): ?>
                         <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nom']) ?></option>

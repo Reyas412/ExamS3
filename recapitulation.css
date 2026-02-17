@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════
+   recapitulation.css — Styles page Récapitulation
+   Fichier : public/css/recapitulation.css
+   BNGRC — Projet Final S3
+   Dépend de : global.css
+═══════════════════════════════════════════ */
+
+/* ── CARTES KPI (3 grandes stats) ── */
+.recap-kpi {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.3rem 1.2rem;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.kpi-card:hover { border-color: #3a4a5e; }
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 0.3rem;
+}
+
+.kpi-sub {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* Couleurs par type de KPI */
+.kpi-card.total    .kpi-value { color: var(--accent); }
+.kpi-card.satisfait .kpi-value { color: var(--green);  }
+.kpi-card.restant  .kpi-value { color: var(--red);    }
+
+.kpi-card.total    { border-top: 3px solid var(--accent); }
+.kpi-card.satisfait { border-top: 3px solid var(--green);  }
+.kpi-card.restant  { border-top: 3px solid var(--red);    }
+
+/* ── BOUTON ACTUALISER ── */
+.refresh-btn-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.last-update {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+/* ── ANIMATION LOADING (Ajax) ── */
+.is-loading {
+  animation: pulse 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 1;   }
+  to   { opacity: 0.3; }
+}
+
+/* ── MINI BARRE DE PROGRESSION (tableau) ── */
+.mini-bar {
+  height: 5px;
+  background: #30363d;
+  border-radius: 999px;
+  margin-top: 0.4rem;
+  overflow: hidden;
+  min-width: 80px;
+}
+
+.mini-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.8s ease;
+}
+
+/* ── BADGE POURCENTAGE ── */
+.pct-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pct-high { background: var(--success-bg); color: var(--green);  }
+.pct-mid  { background: var(--warning-bg); color: var(--yellow); }
+.pct-low  { background: var(--error-bg);   color: var(--red);    }
+
+/* ── CELLULES DU TABLEAU ── */
+.cell-total     { color: var(--text);   font-weight: 600; }
+.cell-satisfait { color: var(--green);  font-weight: 600; }
+.cell-restant   { color: var(--red);    font-weight: 600; }
+
+/* ── BOX FORMULES SQL ── */
+.formules-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.2rem 1.4rem;
+  margin-top: 1.2rem;
+}
+
+.formules-box h4 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.8rem;
+}
+
+.formules-box code {
+  display: block;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: #79c0ff;
+  line-height: 2;
+  background: #0d1117;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+/* ── NOTIFICATION AJAX ── */
+.ajax-notif {
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--info-bg);
+  border: 1px solid #1a3a6a;
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 0.7rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  transition: opacity 0.3s;
+}
+
+.ajax-notif.show { display: flex; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 680px) {
+  .recap-kpi {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-value {
+    font-size: 1.3rem;
+  }
+
+  .refresh-btn-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

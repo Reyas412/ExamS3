@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS regions (
 CREATE TABLE villes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(255) NOT NULL UNIQUE,
-    region_id INT NOT NULL,
-    FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE RESTRICT
+    idregion INT,
+    FOREIGN KEY (idregion) REFERENCES regions(id) ON DELETE CASCADE
 );
 
 -- Table des besoins
@@ -26,8 +26,25 @@ CREATE TABLE besoins (
     date_saisie DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (ville_id) REFERENCES villes(id) ON DELETE CASCADE
 );
+CREATE TABLE config (
+    id INT PRIMARY KEY,
+    frais_achat DECIMAL(5,2) NOT NULL
+);
 
--- Table des dons
+
+-- Table des achat de dons
+    CREATE TABLE achats (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    besoin_id INT NOT NULL,
+    quantite_achetee DECIMAL(10,2) NOT NULL,
+    montant_base DECIMAL(12,2) NOT NULL,
+    idconfig int NOT NULL,
+    montant_frais DECIMAL(12,2) NOT NULL,
+    montant_total DECIMAL(12,2) NOT NULL,
+    date_achat DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (besoin_id) REFERENCES besoins(id) ON DELETE CASCADE,
+    FOREIGN KEY (idconfig) REFERENCES config(id) ON DELETE CASCADE
+);
 CREATE TABLE dons (
     id INT AUTO_INCREMENT PRIMARY KEY,
     type ENUM('nature', 'matériaux', 'argent') NOT NULL,
@@ -39,7 +56,7 @@ CREATE TABLE dons (
 -- Table du dispatch
 CREATE TABLE dispatch (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    don_id INT NOT NULL,
+    don_id INT NULL,
     besoin_id INT NOT NULL,
     quantite_attribuee DECIMAL(10,2) NOT NULL,
     date_dispatch DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -72,8 +89,8 @@ INSERT INTO regions (nom) VALUES
 ('Diana'),
 ('Sava');
 
--- Insertion des villes (modifiées pour inclure region_id)
-INSERT INTO villes (nom, region_id) VALUES
+-- Insertion des villes (utilisant idregion)
+INSERT INTO villes (nom, idregion) VALUES
 ('Antananarivo', 1),
 ('Antsirabe', 2),
 ('Toamasina', 11),

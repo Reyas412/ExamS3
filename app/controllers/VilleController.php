@@ -34,15 +34,15 @@ class VilleController {
 
     public static function create() {
         $nom = Flight::request()->data->nom;
-        $region_id = Flight::request()->data->region_id;
+        $idregion = Flight::request()->data->idregion;
         
-        if (empty($nom) || empty($region_id)) {
+        if (empty($nom) || empty($idregion)) {
             Flight::redirect('/villes?error=' . urlencode('Le nom de la ville et la région sont requis'));
             return;
         }
 
         try {
-            Ville::create($nom, $region_id);
+            Ville::create($nom, $idregion);
             Flight::redirect('/villes?success=' . urlencode('Ville ajoutée avec succès'));
         } catch (Exception $e) {
             Flight::redirect('/villes?error=' . urlencode('Erreur: cette ville existe déjà'));

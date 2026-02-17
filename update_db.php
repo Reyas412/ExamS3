@@ -17,21 +17,21 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS regions (
 
 echo "Table 'regions' créée.\n";
 
-// Vérifier si la colonne region_id existe dans villes
+// Vérifier si la colonne idregion existe dans villes
 $stmt = $pdo->query("DESCRIBE villes");
 $columns = $stmt->fetchAll(PDO::FETCH_COLUMN);
-if (!in_array('region_id', $columns)) {
-    // Ajouter la colonne region_id
+if (!in_array('idregion', $columns)) {
+    // Ajouter la colonne idregion
     // D'abord, ajouter une région par défaut
     $pdo->exec("INSERT IGNORE INTO regions (nom) VALUES ('Analamanga')");
     
-    // Ajouter la colonne region_id
-    $pdo->exec("ALTER TABLE villes ADD COLUMN region_id INT NOT NULL DEFAULT 1");
-    $pdo->exec("ALTER TABLE villes ADD FOREIGN KEY (region_id) REFERENCES regions(id) ON DELETE RESTRICT");
+    // Ajouter la colonne idregion
+    $pdo->exec("ALTER TABLE villes ADD COLUMN idregion INT");
+    $pdo->exec("ALTER TABLE villes ADD FOREIGN KEY (idregion) REFERENCES regions(id) ON DELETE CASCADE");
     
-    echo "Colonne 'region_id' ajoutée à la table 'villes'.\n";
+    echo "Colonne 'idregion' ajoutée à la table 'villes'.\n";
 } else {
-    echo "La colonne 'region_id' existe déjà.\n";
+    echo "La colonne 'idregion' existe déjà.\n";
 }
 
 // Insérer les régions si elles n'existent pas
@@ -54,7 +54,7 @@ foreach ($regions as $region) {
 echo "Régions insérées.\n";
 
 // Mettre à jour les villes existantes avec une région
-$stmt = $pdo->query("SELECT id, nom FROM villes WHERE region_id IS NULL OR region_id = 0");
+$stmt = $pdo->query("SELECT id, nom FROM villes WHERE idregion IS NULL OR idregion = 0");
 $villes = $stmt->fetchAll();
 
 foreach ($villes as $ville) {
@@ -70,7 +70,7 @@ foreach ($villes as $ville) {
     
     $stmt = $pdo->prepare("UPDATE villes v 
                            JOIN regions r ON r.nom = ? 
-                           SET v.region_id = r.id 
+                           SET v.idregion = r.id 
                            WHERE v.id = ?");
     $stmt->execute([$regionNom, $ville['id']]);
 }

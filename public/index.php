@@ -18,6 +18,7 @@ require_once APP_ROOT . '/app/models/Besoin.php';
 require_once APP_ROOT . '/app/models/Don.php';
 require_once APP_ROOT . '/app/models/DispatchModel.php';
 require_once APP_ROOT . '/app/models/Region.php';
+require_once APP_ROOT . '/app/models/achat.php';
 
 // Chargement des contrôleurs
 require_once APP_ROOT . '/app/controllers/DashboardController.php';
@@ -26,6 +27,7 @@ require_once APP_ROOT . '/app/controllers/BesoinController.php';
 require_once APP_ROOT . '/app/controllers/DonController.php';
 require_once APP_ROOT . '/app/controllers/DispatchController.php';
 require_once APP_ROOT . '/app/controllers/RegionController.php';
+require_once APP_ROOT . '/app/controllers/AchatController.php';
 
 // Configuration de Flight
 Flight::set('flight.views.path', APP_ROOT . '/app/views');

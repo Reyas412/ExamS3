@@ -35,6 +35,10 @@
                     <span class="nav-icon">&#10084;</span>
                     Dons
                 </a>
+                <a href="/simulation" class="nav-link <?= ($active ?? '') === 'simulation' ? 'active' : '' ?>">
+                    <span class="nav-icon">&#127916;</span>
+                    Achat
+                </a>
                 <a href="/dispatch" class="nav-link <?= ($active ?? '') === 'dispatch' ? 'active' : '' ?>">
                     <span class="nav-icon">&#10148;</span>
                     Dispatch
